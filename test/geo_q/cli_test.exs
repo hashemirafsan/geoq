@@ -72,4 +72,37 @@ defmodule GeoQ.CLITest do
   test "inspect command requires a path" do
     assert {:error, :invalid_inspect_args} = CLI.dispatch(["inspect"])
   end
+
+  test "query command returns table output for registered alias" do
+    alias_name = "query_alias_#{System.unique_integer([:positive])}"
+    assert {:ok, _} = CLI.dispatch(["register", @netcdf_file, "--alias", alias_name])
+
+    assert {:ok, output} = CLI.dispatch(["query", "SELECT * FROM #{alias_name} LIMIT 1"])
+    assert output =~ "alias | file_path"
+    assert output =~ alias_name
+
+    assert :ok = Registry.unregister(alias_name)
+  end
+
+  test "query command supports csv format" do
+    alias_name = "query_csv_#{System.unique_integer([:positive])}"
+    assert {:ok, _} = CLI.dispatch(["register", @netcdf_file, "--alias", alias_name])
+
+    assert {:ok, output} =
+             CLI.dispatch([
+               "query",
+               "--format",
+               "csv",
+               "SELECT file_path FROM #{alias_name} LIMIT 1"
+             ])
+
+    assert output =~ "file_path"
+    assert output =~ @netcdf_file
+
+    assert :ok = Registry.unregister(alias_name)
+  end
+
+  test "query command validates args" do
+    assert {:error, :invalid_query_args} = CLI.dispatch(["query"])
+  end
 end

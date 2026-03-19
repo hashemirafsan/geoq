@@ -7,6 +7,10 @@ defmodule GeoQ.CLI do
   """
 
   alias GeoQ.Commands.Inspect
+  alias GeoQ.Formatter.CSV
+  alias GeoQ.Formatter.JSON
+  alias GeoQ.Formatter.Table
+  alias GeoQ.Query.Executor
   alias GeoQ.Registry
 
   @type command_result :: {:ok, String.t()} | {:error, term()}
@@ -64,8 +68,17 @@ defmodule GeoQ.CLI do
     end
   end
 
-  def dispatch(["query" | _]) do
-    {:error, :query_not_implemented}
+  def dispatch(["query" | rest]) do
+    case OptionParser.parse(rest, strict: [format: :string, file: :string]) do
+      {opts, args, []} ->
+        with {:ok, sql} <- resolve_query_sql(opts, args),
+             {:ok, result_set} <- Executor.execute(sql) do
+          render_query_result(result_set, query_format(opts))
+        end
+
+      _ ->
+        {:error, :invalid_query_args}
+    end
   end
 
   def dispatch(["repl"]) do
@@ -89,6 +102,37 @@ defmodule GeoQ.CLI do
     end
   end
 
+  defp resolve_query_sql(opts, args) do
+    query_file = Keyword.get(opts, :file)
+
+    case {query_file, args} do
+      {nil, [sql]} ->
+        {:ok, sql}
+
+      {file_path, []} when is_binary(file_path) ->
+        case File.read(file_path) do
+          {:ok, sql} -> {:ok, sql}
+          {:error, reason} -> {:error, {:query_file_read_failed, file_path, reason}}
+        end
+
+      _ ->
+        {:error, :invalid_query_args}
+    end
+  end
+
+  defp query_format(opts) do
+    opts
+    |> Keyword.get(:format, "table")
+    |> String.downcase()
+  end
+
+  defp render_query_result(result_set, "table"), do: {:ok, Table.format(result_set)}
+  defp render_query_result(result_set, "csv"), do: {:ok, CSV.format(result_set)}
+  defp render_query_result(result_set, "json"), do: JSON.format(result_set)
+
+  defp render_query_result(_result_set, format),
+    do: {:error, {:unsupported_output_format, format}}
+
   defp format_entry({source_alias, metadata}) do
     file_path = Map.get(metadata, :file_path) || Map.get(metadata, "file_path") || ""
     "#{source_alias}\t#{file_path}"
@@ -99,8 +143,10 @@ defmodule GeoQ.CLI do
   defp format_reason(:invalid_inspect_args),
     do: "Usage: geoq inspect [--format table|json] <path>"
 
+  defp format_reason(:invalid_query_args),
+    do: "Usage: geoq query [--format table|csv|json] <sql> | geoq query --file <path>"
+
   defp format_reason(:unknown_command), do: "Unknown command"
-  defp format_reason(:query_not_implemented), do: "query command not implemented yet"
   defp format_reason(:repl_not_implemented), do: "repl command not implemented yet"
 
   defp format_reason({:unsupported_source_format, extension}),
@@ -115,6 +161,15 @@ defmodule GeoQ.CLI do
     do: "Alias already exists. Use a different alias or unregister first."
 
   defp format_reason({:persist_failed, reason}), do: "Registry persist failed: #{inspect(reason)}"
+
+  defp format_reason({:source_not_registered, source_alias}),
+    do: "Source is not registered: #{source_alias}"
+
+  defp format_reason({:unknown_column, column}), do: "Unknown column in query: #{column}"
+
+  defp format_reason({:query_file_read_failed, file_path, reason}),
+    do: "Could not read query file #{file_path}: #{inspect(reason)}"
+
   defp format_reason({:command_failed, reason}), do: reason
   defp format_reason(reason), do: inspect(reason)
 end

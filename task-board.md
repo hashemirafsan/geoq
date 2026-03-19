@@ -68,12 +68,12 @@ Build GeoQ v1 as a CLI geospatial file-native query engine in Elixir, fully runn
 - [x] Add integration tests for CLI output and error messages
 
 ## Epic G - SQL Query Core
-- [ ] Implement lexer (NimbleParsec) for v1 tokens
-- [ ] Implement parser for supported SQL subset
-- [ ] Add parser error messages for unsupported syntax
-- [ ] Implement planner with alias resolution and pushdown rules
+- [x] Implement lexer for v1 tokens
+- [x] Implement parser for supported SQL subset
+- [x] Add parser error messages for unsupported syntax
+- [x] Implement planner with alias resolution and pushdown rules
 - [ ] Implement executor stream pipeline with concurrency controls
-- [ ] Add tests: AST snapshots, planner rules, executor correctness
+- [x] Add tests: AST snapshots, planner rules, executor correctness
 
 ## Epic H - Adapters
 - [ ] Define shared adapter behavior contract tests

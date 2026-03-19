@@ -16,10 +16,11 @@ the intended flow is:
 2. `GeoQ.Query.Lexer` tokenizes SQL.
 3. `GeoQ.Query.Parser` builds an AST.
 4. `GeoQ.Query.Planner` turns AST into an execution plan.
-5. `GeoQ.Query.Executor` executes plan with streams/tasks.
+5. `GeoQ.Query.Executor` executes the plan.
 6. `GeoQ.Formatter.*` turns result into table/csv/json/geojson output.
 
-Right now, step 1 has basic command routing, and steps 2-6 are placeholders.
+Right now, steps 1-4 are implemented for a minimal SQL subset, and step 5
+executes a temporary metadata-backed result path while adapter row reads are pending.
 
 ## 2) Core Runtime Components
 

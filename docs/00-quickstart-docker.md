@@ -93,6 +93,13 @@ The registry file is persisted at `~/.geoq/registry.json` inside the container a
 
 If you try to register the same alias again, GeoQ returns an `alias_exists` error to prevent accidental overwrite.
 
+Minimal query check (current metadata-backed slice):
+
+```bash
+docker compose run --rm dev bash -lc "mix run -e 'GeoQ.CLI.main([\"query\", \"SELECT * FROM climate LIMIT 1\"])'"
+docker compose run --rm dev bash -lc "mix run -e 'GeoQ.CLI.main([\"query\", \"--format\", \"csv\", \"SELECT file_path FROM climate LIMIT 1\"])'"
+```
+
 ## 7) Notes on speed and reproducibility
 
 - Compose uses named volumes for `_build`, `deps`, Hex, and Rebar caches.

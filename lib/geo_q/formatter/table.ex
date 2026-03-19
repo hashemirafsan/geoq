@@ -7,8 +7,14 @@ defmodule GeoQ.Formatter.Table do
 
   @spec format(ResultSet.t()) :: String.t()
   def format(%ResultSet{columns: columns, rows: rows}) do
-    header = Enum.join(columns, " | ")
-    body = Enum.map_join(rows, "\n", fn row -> Enum.join(List.wrap(row), " | ") end)
+    header = Enum.map_join(columns, " | ", &to_string/1)
+
+    body =
+      Enum.map_join(rows, "\n", fn row ->
+        row
+        |> List.wrap()
+        |> Enum.map_join(" | ", &to_string/1)
+      end)
 
     case body do
       "" -> header
