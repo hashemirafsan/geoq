@@ -37,6 +37,7 @@ make ci           # full docker-based CI checks
 - Architecture vision: `architecture.md`
 - Task board and checklist: `task-board.md`
 - Docker setup walkthrough: `docs/00-quickstart-docker.md`
+- Testing strategy and policy: `docs/03-testing-strategy.md`
 - Data exploration notes: `docs/06-data-playground.md`
 
 ## Notes

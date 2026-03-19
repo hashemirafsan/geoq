@@ -2,10 +2,17 @@ defmodule GeoQ.RegistryTest do
   use ExUnit.Case, async: false
 
   alias GeoQ.Registry
+  alias GeoQ.TestSupport
 
   setup do
-    storage_path = temp_storage_path()
-    registry = start_supervised!({Registry, name: :registry_test, storage_path: storage_path})
+    storage_path = TestSupport.temp_storage_path("geoq-registry")
+
+    registry =
+      start_supervised!(
+        {Registry,
+         name: TestSupport.unique_registry_name("registry_test"), storage_path: storage_path}
+      )
+
     %{registry: registry, storage_path: storage_path}
   end
 
@@ -55,13 +62,19 @@ defmodule GeoQ.RegistryTest do
 
   test "entries survive registry restart", %{storage_path: storage_path} do
     {:ok, first_registry} =
-      Registry.start_link(name: :registry_restart_a, storage_path: storage_path)
+      Registry.start_link(
+        name: TestSupport.unique_registry_name("registry_restart_a"),
+        storage_path: storage_path
+      )
 
     assert :ok = Registry.register("climate", %{file_path: "data/example.nc"}, first_registry)
     assert :ok = GenServer.stop(first_registry)
 
     {:ok, second_registry} =
-      Registry.start_link(name: :registry_restart_b, storage_path: storage_path)
+      Registry.start_link(
+        name: TestSupport.unique_registry_name("registry_restart_b"),
+        storage_path: storage_path
+      )
 
     on_exit(fn -> if Process.alive?(second_registry), do: GenServer.stop(second_registry) end)
 
@@ -72,14 +85,14 @@ defmodule GeoQ.RegistryTest do
     assert :ok = File.mkdir_p(Path.dirname(storage_path))
     assert :ok = File.write(storage_path, "{ not json")
 
-    {:ok, registry} = Registry.start_link(name: :registry_corrupted, storage_path: storage_path)
+    {:ok, registry} =
+      Registry.start_link(
+        name: TestSupport.unique_registry_name("registry_corrupted"),
+        storage_path: storage_path
+      )
+
     on_exit(fn -> if Process.alive?(registry), do: GenServer.stop(registry) end)
 
     assert [] = Registry.list(registry)
-  end
-
-  defp temp_storage_path do
-    unique = System.unique_integer([:positive])
-    Path.join(System.tmp_dir!(), "geoq-registry-#{unique}/registry.json")
   end
 end

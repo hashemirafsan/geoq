@@ -3,10 +3,16 @@ defmodule GeoQ.Query.ExecutorTest do
 
   alias GeoQ.Query.Executor
   alias GeoQ.Registry
+  alias GeoQ.TestSupport
 
   setup do
-    storage_path = temp_storage_path()
-    registry = start_supervised!({Registry, name: :executor_registry, storage_path: storage_path})
+    storage_path = TestSupport.temp_storage_path("geoq-executor")
+
+    registry =
+      start_supervised!(
+        {Registry,
+         name: TestSupport.unique_registry_name("executor_registry"), storage_path: storage_path}
+      )
 
     :ok = Registry.register("mock_source", %{file_path: "data/example.mock"}, registry)
 
@@ -65,10 +71,5 @@ defmodule GeoQ.Query.ExecutorTest do
   test "returns error for unregistered source", %{registry: registry} do
     assert {:error, {:source_not_registered, "missing"}} =
              Executor.execute("SELECT * FROM missing", registry)
-  end
-
-  defp temp_storage_path do
-    unique = System.unique_integer([:positive])
-    Path.join(System.tmp_dir!(), "geoq-executor-#{unique}/registry.json")
   end
 end

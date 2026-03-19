@@ -46,11 +46,11 @@ Build GeoQ v1 as a CLI geospatial file-native query engine in Elixir, fully runn
 - [x] Add formatter and lint baseline config
 
 ## Epic D - Test & Coverage Infrastructure
-- [ ] Configure ExUnit defaults and deterministic test helpers
+- [x] Configure ExUnit defaults and deterministic test helpers
 - [x] Configure coverage reports (`mix test --cover`, ExCoveralls optional)
 - [x] Add coverage gate in CI (ratchet to 100%)
-- [ ] Define test categories: unit / contract / integration / regression
-- [ ] Add policy: every `{:error, ...}` path must have a test
+- [x] Define test categories: unit / contract / integration / regression
+- [x] Add policy: every `{:error, ...}` path must have a test
 - [x] Add CI fixture generation strategy (`scripts/prepare_test_fixtures.sh`)
 - [ ] Add sample fixture strategy under `priv/sample_data`
 
@@ -106,7 +106,7 @@ Build GeoQ v1 as a CLI geospatial file-native query engine in Elixir, fully runn
 - [x] `docs/00-quickstart-docker.md`
 - [x] `docs/01-architecture-map.md`
 - [ ] `docs/02-elixir-basics-for-geoq.md`
-- [ ] `docs/03-testing-strategy.md`
+- [x] `docs/03-testing-strategy.md`
 - [ ] `docs/04-debugging-playbook.md`
 - [ ] `docs/05-contributor-checklist.md`
 - [ ] Add "how to add a new adapter" guide

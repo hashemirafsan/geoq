@@ -3,10 +3,17 @@ defmodule GeoQ.Query.PlannerTest do
 
   alias GeoQ.Query.Planner
   alias GeoQ.Registry
+  alias GeoQ.TestSupport
 
   setup do
-    storage_path = temp_storage_path()
-    registry = start_supervised!({Registry, name: :planner_registry, storage_path: storage_path})
+    storage_path = TestSupport.temp_storage_path("geoq-planner")
+
+    registry =
+      start_supervised!(
+        {Registry,
+         name: TestSupport.unique_registry_name("planner_registry"), storage_path: storage_path}
+      )
+
     %{registry: registry}
   end
 
@@ -25,10 +32,5 @@ defmodule GeoQ.Query.PlannerTest do
   test "returns error when source alias is missing", %{registry: registry} do
     ast = %{select: :all, from: "unknown", limit: nil}
     assert {:error, {:source_not_registered, "unknown"}} = Planner.plan(ast, registry)
-  end
-
-  defp temp_storage_path do
-    unique = System.unique_integer([:positive])
-    Path.join(System.tmp_dir!(), "geoq-planner-#{unique}/registry.json")
   end
 end
