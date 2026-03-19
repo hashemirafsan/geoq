@@ -41,4 +41,20 @@ defmodule GeoQ.Adapters.ShapefileTest do
     assert {:error, {:command_failed, message}} = Shapefile.schema("architecture.md")
     assert message =~ "FAILURE"
   end
+
+  test "read_columns returns projected attribute rows" do
+    assert {:ok, rows} = Shapefile.read_columns(@shapefile, ["COUNTRY", "GID_0"], limit: 1)
+
+    assert rows == [%{"COUNTRY" => "Greece", "GID_0" => "GRC"}]
+  end
+
+  test "read_columns rejects unknown columns" do
+    assert {:error, {:unknown_column, "MISSING"}} =
+             Shapefile.read_columns(@shapefile, ["MISSING"], [])
+  end
+
+  test "read_columns rejects geom column for now" do
+    assert {:error, {:unsupported_column, "geom"}} =
+             Shapefile.read_columns(@shapefile, ["geom"], [])
+  end
 end

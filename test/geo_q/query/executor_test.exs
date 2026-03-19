@@ -12,6 +12,13 @@ defmodule GeoQ.Query.ExecutorTest do
 
     :ok =
       Registry.register(
+        "regions",
+        %{file_path: "data/gadm41_GRC_shp/gadm41_GRC_0.shp"},
+        registry
+      )
+
+    :ok =
+      Registry.register(
         "climate",
         %{file_path: "data/HWD_EU_health_rcp85_mean_v1.0.nc"},
         registry
@@ -38,6 +45,13 @@ defmodule GeoQ.Query.ExecutorTest do
   test "returns error for unknown projected column", %{registry: registry} do
     assert {:error, {:unknown_column, "temperature"}} =
              Executor.execute("SELECT temperature FROM climate", registry)
+  end
+
+  test "applies adapter-backed shapefile projection", %{registry: registry} do
+    assert {:ok, result} = Executor.execute("SELECT COUNTRY FROM regions LIMIT 1", registry)
+
+    assert result.columns == ["COUNTRY"]
+    assert result.rows == [["Greece"]]
   end
 
   test "returns error for unregistered source", %{registry: registry} do

@@ -111,6 +111,17 @@ defmodule GeoQ.CLITest do
     assert :ok = Registry.unregister(alias_name)
   end
 
+  test "query command supports adapter-backed shapefile projection" do
+    alias_name = "query_regions_#{System.unique_integer([:positive])}"
+    assert {:ok, _} = CLI.dispatch(["register", @shapefile, "--alias", alias_name])
+
+    assert {:ok, output} = CLI.dispatch(["query", "SELECT COUNTRY FROM #{alias_name} LIMIT 1"])
+    assert output =~ "COUNTRY"
+    assert output =~ "Greece"
+
+    assert :ok = Registry.unregister(alias_name)
+  end
+
   test "query command validates args" do
     assert {:error, :invalid_query_args} = CLI.dispatch(["query"])
   end

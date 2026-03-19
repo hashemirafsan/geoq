@@ -98,6 +98,10 @@ Minimal query check (current metadata-backed slice):
 ```bash
 docker compose run --rm dev bash -lc "mix run -e 'GeoQ.CLI.main([\"query\", \"SELECT * FROM climate LIMIT 1\"])'"
 docker compose run --rm dev bash -lc "mix run -e 'GeoQ.CLI.main([\"query\", \"--format\", \"csv\", \"SELECT file_path FROM climate LIMIT 1\"])'"
+docker compose run --rm dev bash -lc "mix run -e 'GeoQ.CLI.main([\"query\", \"SELECT time FROM climate LIMIT 3\"])'"
+docker compose run --rm dev bash -lc "mix run -e 'GeoQ.CLI.main([\"register\", \"data/gadm41_GRC_shp/gadm41_GRC_0.shp\", \"--alias\", \"regions\"])'"
+docker compose run --rm dev bash -lc "mix run -e 'GeoQ.CLI.main([\"query\", \"SELECT COUNTRY FROM regions LIMIT 1\"])'"
+docker compose run --rm dev bash -lc "mix run -e 'GeoQ.CLI.main([\"unregister\", \"regions\"])'"
 ```
 
 ## 7) Notes on speed and reproducibility

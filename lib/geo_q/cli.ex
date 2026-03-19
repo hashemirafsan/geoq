@@ -167,6 +167,12 @@ defmodule GeoQ.CLI do
 
   defp format_reason({:unknown_column, column}), do: "Unknown column in query: #{column}"
 
+  defp format_reason({:unsupported_column, column}),
+    do: "Unsupported column in this query path: #{column}"
+
+  defp format_reason({:unexpected_output_columns, headers}),
+    do: "Unexpected adapter output columns: #{inspect(headers)}"
+
   defp format_reason({:query_file_read_failed, file_path, reason}),
     do: "Could not read query file #{file_path}: #{inspect(reason)}"
 

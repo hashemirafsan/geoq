@@ -35,7 +35,18 @@ defmodule GeoQ.Adapters.Shapefile do
   end
 
   @impl true
-  def read_columns(_file_path, _columns, _filters), do: {:error, :not_implemented}
+  def read_columns(file_path, columns, filters)
+      when is_binary(file_path) and is_list(columns) and is_list(filters) do
+    expanded_path = Path.expand(file_path)
+
+    with :ok <- validate_file(expanded_path),
+         {:ok, %Schema{} = schema} <- schema(expanded_path),
+         :ok <- validate_projection(columns, schema),
+         {:ok, output} <- ogr2ogr_tsv(expanded_path, schema.source_alias, columns),
+         {:ok, rows} <- parse_tsv_rows(output, columns) do
+      {:ok, apply_limit(rows, filters)}
+    end
+  end
 
   @impl true
   def spatial_index(_file_path), do: {:error, :not_implemented}
@@ -70,6 +81,94 @@ defmodule GeoQ.Adapters.Shapefile do
   rescue
     error in ErlangError ->
       {:error, {:command_failed, Exception.message(error)}}
+  end
+
+  defp ogr2ogr_tsv(file_path, layer_name, columns) do
+    sql = "SELECT #{Enum.join(columns, ", ")} FROM #{layer_name}"
+
+    case System.cmd(
+           "ogr2ogr",
+           [
+             "-f",
+             "CSV",
+             "/vsistdout/",
+             file_path,
+             "-lco",
+             "SEPARATOR=TAB",
+             "-dialect",
+             "OGRSQL",
+             "-sql",
+             sql
+           ],
+           stderr_to_stdout: true
+         ) do
+      {output, 0} -> {:ok, output}
+      {output, _exit_code} -> {:error, {:command_failed, String.trim(output)}}
+    end
+  rescue
+    error in ErlangError ->
+      {:error, {:command_failed, Exception.message(error)}}
+  end
+
+  defp validate_projection(columns, %Schema{columns: schema_columns}) do
+    known_columns = MapSet.new(schema_columns, & &1.name)
+
+    Enum.reduce_while(columns, :ok, fn
+      "geom", _acc ->
+        {:halt, {:error, {:unsupported_column, "geom"}}}
+
+      column_name, _acc ->
+        if MapSet.member?(known_columns, column_name) do
+          {:cont, :ok}
+        else
+          {:halt, {:error, {:unknown_column, column_name}}}
+        end
+    end)
+  end
+
+  defp parse_tsv_rows(output, selected_columns) do
+    lines = String.split(output, "\n", trim: true)
+
+    case lines do
+      [] ->
+        {:ok, []}
+
+      [header | data_lines] ->
+        headers = String.split(header, "\t", trim: true)
+
+        if headers == selected_columns do
+          {:ok, Enum.map(data_lines, &parse_tsv_row(&1, headers))}
+        else
+          {:error, {:unexpected_output_columns, headers}}
+        end
+    end
+  end
+
+  defp parse_tsv_row(line, headers) do
+    values = String.split(line, "\t")
+    padded_values = values ++ List.duplicate(nil, max(length(headers) - length(values), 0))
+
+    headers
+    |> Enum.zip(padded_values)
+    |> Enum.reduce(%{}, fn {header, value}, acc ->
+      Map.put(acc, header, normalize_tsv_value(value))
+    end)
+  end
+
+  defp normalize_tsv_value(nil), do: nil
+
+  defp normalize_tsv_value(value) do
+    cleaned = value |> String.trim() |> String.trim("\"")
+    if cleaned == "", do: nil, else: cleaned
+  end
+
+  defp apply_limit(rows, filters) do
+    case Keyword.get(filters, :limit) do
+      nil -> rows
+      limit when is_integer(limit) and limit <= 0 -> []
+      limit when is_integer(limit) -> Enum.take(rows, limit)
+      _ -> rows
+    end
   end
 
   defp parse_layer_name(output) do
