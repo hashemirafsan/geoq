@@ -68,6 +68,7 @@ Examples already covered:
 - unknown source alias in planner/executor
 - unknown projection columns in adapters
 - corrupted registry file handling
+- missing external binaries (`ncdump`, `ogrinfo`, `gdalinfo`, `gdal_translate`)
 
 When adding new code:
 
