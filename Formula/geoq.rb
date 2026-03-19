@@ -1,8 +1,8 @@
 class Geoq < Formula
   desc "CLI geospatial file-native query engine"
   homepage "https://github.com/hashemirafsan/geoq"
-  url "https://github.com/hashemirafsan/geoq/archive/refs/tags/v0.1.0.tar.gz"
-  sha256 "0000000000000000000000000000000000000000000000000000000000000000"
+  url "https://github.com/hashemirafsan/geoq/archive/refs/tags/v0.1.2.tar.gz"
+  sha256 "8c0ad269a2984be3d2cb2122dde3e643ebb06b6cc8653a35202bc3b89244a9b4"
   head "https://github.com/hashemirafsan/geoq.git", branch: "main"
 
   depends_on "elixir" => :build
