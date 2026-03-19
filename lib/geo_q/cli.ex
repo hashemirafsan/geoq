@@ -6,6 +6,7 @@ defmodule GeoQ.CLI do
   command in vertical slices with tests.
   """
 
+  alias GeoQ
   alias GeoQ.Commands.Inspect
   alias GeoQ.Formatter.CSV
   alias GeoQ.Formatter.JSON
@@ -15,16 +16,16 @@ defmodule GeoQ.CLI do
 
   @type command_result :: {:ok, String.t()} | {:error, term()}
 
-  @spec main([String.t()]) :: :ok | {:error, term()}
+  @spec main([String.t()]) :: no_return()
   def main(argv) do
     case dispatch(argv) do
       {:ok, output} ->
         IO.puts(output)
-        :ok
+        System.halt(0)
 
       {:error, reason} ->
         IO.puts("Error: #{format_reason(reason)}")
-        {:error, reason}
+        System.halt(1)
     end
   end
 
@@ -87,6 +88,34 @@ defmodule GeoQ.CLI do
 
       _ ->
         {:error, :invalid_query_args}
+    end
+  end
+
+  def dispatch(["--version"]), do: {:ok, GeoQ.version()}
+  def dispatch(["version"]), do: {:ok, GeoQ.version()}
+
+  def dispatch(["doctor"]) do
+    tools = ["gdalinfo", "gdal_translate", "ogrinfo", "ncdump"]
+
+    checks =
+      Enum.map(tools, fn tool ->
+        case System.find_executable(tool) do
+          nil -> {:missing, tool}
+          path -> {:ok, tool, path}
+        end
+      end)
+
+    missing = Enum.filter(checks, &match?({:missing, _}, &1))
+
+    if missing == [] do
+      output =
+        checks
+        |> Enum.map_join("\n", fn {:ok, tool, path} -> "#{tool}: OK (#{path})" end)
+
+      {:ok, "Doctor check passed\n" <> output}
+    else
+      missing_tools = Enum.map(missing, fn {:missing, tool} -> tool end)
+      {:error, {:doctor_failed, missing_tools}}
     end
   end
 
@@ -195,6 +224,9 @@ defmodule GeoQ.CLI do
 
   defp format_reason(:unknown_command), do: "Unknown command"
   defp format_reason(:repl_not_implemented), do: "repl command not implemented yet"
+
+  defp format_reason({:doctor_failed, tools}),
+    do: "Missing required tools: #{Enum.join(tools, ", ")}"
 
   defp format_reason({:unsupported_source_format, extension}),
     do: "Unsupported file format: #{extension}"

@@ -45,6 +45,7 @@ Current CI/local strategy:
   files are missing:
   - NetCDF fixture (`.nc`)
   - Shapefile fixture (`.shp` + sidecar files)
+  - GeoTIFF fixture (`.tif`)
   - CSV fixture (`.csv`)
 
 Why this exists:

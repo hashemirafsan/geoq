@@ -63,14 +63,17 @@ docker compose run --rm dev ncdump -h data/HWD_EU_health_rcp85_mean_v1.0.nc
 - `make lint` - run Credo lint checks
 - `make prepare-test-fixtures` - create local test fixtures when data files are absent
 - `make ci` - run Docker build + format-check + lint + tests
+- `make acceptance-smoke` - run installed-style CLI user journey in Docker
 - `make clean-cache` - remove Compose volumes/caches
 
 ## 6) Run the first GeoQ inspect command
 
-GeoQ currently has `.nc` and `.shp` inspect support.
+GeoQ currently has `.nc`, `.shp`, and `.tif` inspect support.
 
 ```bash
 docker compose run --rm dev bash -lc "mix run -e 'GeoQ.CLI.main([\"inspect\", \"data/HWD_EU_health_rcp85_mean_v1.0.nc\"])'"
+docker compose run --rm dev bash -lc "mix run -e 'GeoQ.CLI.main([\"--version\"])'"
+docker compose run --rm dev bash -lc "mix run -e 'GeoQ.CLI.main([\"doctor\"])'"
 ```
 
 JSON output:

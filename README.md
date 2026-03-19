@@ -2,7 +2,16 @@
 
 GeoQ is a CLI-first geospatial file-native query engine written in Elixir.
 
-Current status: project skeleton with Docker-first development workflow.
+Current status: Docker-first development and production-grade macOS install pipeline via Homebrew.
+
+## Install on macOS (Homebrew)
+
+```bash
+brew tap hashemirafsan/geoq
+brew install geoq
+geoq --version
+geoq doctor
+```
 
 ## Quick Start (Docker)
 
@@ -25,12 +34,14 @@ make format-check # check formatting only
 make lint         # credo checks
 make test         # tests with coverage report
 make ci           # full docker-based CI checks
+make acceptance-smoke # real user journey smoke
 ```
 
 ## CI
 
 - GitHub Actions workflow: `.github/workflows/ci.yml`
 - Uses the same Docker + Make workflow as local development.
+- Release workflow: `.github/workflows/release.yml` (tag `v*`).
 
 ## Project Docs
 
@@ -38,26 +49,13 @@ make ci           # full docker-based CI checks
 - Task board and checklist: `task-board.md`
 - Docker setup walkthrough: `docs/00-quickstart-docker.md`
 - Testing strategy and policy: `docs/03-testing-strategy.md`
+- Debugging playbook: `docs/04-debugging-playbook.md`
+- Contributor checklist: `docs/05-contributor-checklist.md`
+- Release checklist: `docs/release-checklist.md`
+- Rollback guide: `docs/rollback.md`
 - Data exploration notes: `docs/06-data-playground.md`
 
 ## Notes
 
-- Query/adapters/spatial modules are currently placeholders.
-- Implementation proceeds by vertical slices from the task board.
-- Registry aliases persist to `~/.geoq/registry.json` (Docker volume-backed in `dev` service).
-
-## Future Package Installation
-
-If published to Hex later, dependency installation will be added here.
-
-```elixir
-def deps do
-  [
-    {:geoq, "~> 0.1.0"}
-  ]
-end
-```
-
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at <https://hexdocs.pm/geoq>.
+- Registry aliases persist to `~/.geoq/registry.json`.
+- Release flow updates Homebrew formula with pinned tag tarball + sha256.

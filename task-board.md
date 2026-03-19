@@ -26,8 +26,8 @@ Build GeoQ v1 as a CLI geospatial file-native query engine in Elixir, fully runn
 ## Epic A - Scope & Planning
 - [ ] Convert `architecture.md` into explicit v1 scope checklist (in/out)
 - [ ] Map architecture success criteria to testable acceptance criteria
-- [ ] Define PR checklist and quality gates
-- [ ] Create contributor workflow doc (branch -> test -> PR)
+- [x] Define PR checklist and quality gates
+- [x] Create contributor workflow doc (branch -> test -> PR)
 - [ ] Add risk register (external tools, sample data, parser complexity)
 
 ## Epic B - Docker Environment (Highest Priority)
@@ -107,8 +107,8 @@ Build GeoQ v1 as a CLI geospatial file-native query engine in Elixir, fully runn
 - [x] `docs/01-architecture-map.md`
 - [ ] `docs/02-elixir-basics-for-geoq.md`
 - [x] `docs/03-testing-strategy.md`
-- [ ] `docs/04-debugging-playbook.md`
-- [ ] `docs/05-contributor-checklist.md`
+- [x] `docs/04-debugging-playbook.md`
+- [x] `docs/05-contributor-checklist.md`
 - [ ] Add "how to add a new adapter" guide
 
 ## Epic L - CI, Performance, Release
@@ -116,7 +116,7 @@ Build GeoQ v1 as a CLI geospatial file-native query engine in Elixir, fully runn
 - [ ] Enforce 100% coverage threshold
 - [ ] Add benchmark smoke tests for representative workloads
 - [ ] Validate architecture success criteria with executable test cases
-- [ ] Add release checklist and versioning process
+- [x] Add release checklist and versioning process
 
 ---
 

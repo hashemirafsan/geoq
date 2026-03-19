@@ -1,6 +1,7 @@
 defmodule GeoQ.CLITest do
   use ExUnit.Case, async: false
 
+  alias GeoQ
   alias GeoQ.CLI
   alias GeoQ.Registry
 
@@ -11,6 +12,28 @@ defmodule GeoQ.CLITest do
 
   test "unknown command returns error" do
     assert {:error, :unknown_command} = CLI.dispatch(["unknown"])
+  end
+
+  test "version command returns app version" do
+    assert {:ok, version} = CLI.dispatch(["--version"])
+    assert version == GeoQ.version()
+  end
+
+  test "doctor command reports available tools" do
+    assert {:ok, output} = CLI.dispatch(["doctor"])
+    assert output =~ "Doctor check passed"
+    assert output =~ "gdalinfo: OK"
+    assert output =~ "ncdump: OK"
+  end
+
+  test "doctor command fails when tools are missing" do
+    original_path = System.get_env("PATH")
+    on_exit(fn -> restore_path(original_path) end)
+    System.put_env("PATH", "/geoq/no-such-bin")
+
+    assert {:error, {:doctor_failed, missing_tools}} = CLI.dispatch(["doctor"])
+    assert "gdalinfo" in missing_tools
+    assert "ncdump" in missing_tools
   end
 
   test "register rejects missing file path" do
@@ -248,4 +271,7 @@ defmodule GeoQ.CLITest do
   test "query command validates args" do
     assert {:error, :invalid_query_args} = CLI.dispatch(["query"])
   end
+
+  defp restore_path(nil), do: System.delete_env("PATH")
+  defp restore_path(path), do: System.put_env("PATH", path)
 end

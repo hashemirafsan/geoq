@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: docker-build shell deps compile test cover format format-check lint ci prepare-test-fixtures clean-cache data-check
+.PHONY: docker-build shell deps compile build-escript test cover format format-check lint ci prepare-test-fixtures acceptance-smoke clean-cache data-check
 
 docker-build:
 	docker compose build
@@ -13,6 +13,9 @@ deps:
 
 compile:
 	docker compose run --rm dev bash -lc "mix compile"
+
+build-escript:
+	docker compose run --rm dev bash -lc "mix escript.build"
 
 test:
 	docker compose run --rm test bash -lc "bash scripts/prepare_test_fixtures.sh && mix deps.get && mix test --cover"
@@ -31,6 +34,9 @@ lint:
 
 prepare-test-fixtures:
 	docker compose run --rm dev bash -lc "bash scripts/prepare_test_fixtures.sh"
+
+acceptance-smoke:
+	docker compose run --rm dev bash -lc "bash scripts/prepare_test_fixtures.sh && mix escript.build && GEOQ_BIN=./geoq bash scripts/acceptance/macos_user_journey.sh"
 
 ci:
 	docker compose build && $(MAKE) format-check && $(MAKE) lint && $(MAKE) test
