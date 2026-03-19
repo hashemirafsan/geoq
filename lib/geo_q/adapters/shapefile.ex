@@ -38,12 +38,21 @@ defmodule GeoQ.Adapters.Shapefile do
   def read_columns(file_path, columns, filters)
       when is_binary(file_path) and is_list(columns) and is_list(filters) do
     expanded_path = Path.expand(file_path)
+    include_geom = Enum.member?(columns, "geom")
+    attribute_columns = Enum.reject(columns, &(&1 == "geom"))
 
     with :ok <- validate_file(expanded_path),
          {:ok, %Schema{} = schema} <- schema(expanded_path),
          :ok <- validate_projection(columns, schema),
-         {:ok, output} <- ogr2ogr_tsv(expanded_path, schema.source_alias, columns),
-         {:ok, rows} <- parse_tsv_rows(output, columns) do
+         {:ok, output} <-
+           ogr2ogr_tsv(
+             expanded_path,
+             schema.source_alias,
+             attribute_columns,
+             filters,
+             include_geom
+           ),
+         {:ok, rows} <- parse_tsv_rows(output, columns, include_geom) do
       {:ok, apply_limit(rows, filters)}
     end
   end
@@ -83,23 +92,17 @@ defmodule GeoQ.Adapters.Shapefile do
       {:error, {:command_failed, Exception.message(error)}}
   end
 
-  defp ogr2ogr_tsv(file_path, layer_name, columns) do
-    sql = "SELECT #{Enum.join(columns, ", ")} FROM #{layer_name}"
+  defp ogr2ogr_tsv(file_path, layer_name, attribute_columns, filters, include_geom) do
+    sql = build_sql(layer_name, attribute_columns, filters)
+
+    args =
+      ["-f", "CSV", "/vsistdout/", file_path, "-lco", "SEPARATOR=TAB"] ++
+        geometry_lco_args(include_geom) ++
+        ["-dialect", "OGRSQL", "-sql", sql]
 
     case System.cmd(
            "ogr2ogr",
-           [
-             "-f",
-             "CSV",
-             "/vsistdout/",
-             file_path,
-             "-lco",
-             "SEPARATOR=TAB",
-             "-dialect",
-             "OGRSQL",
-             "-sql",
-             sql
-           ],
+           args,
            stderr_to_stdout: true
          ) do
       {output, 0} -> {:ok, output}
@@ -113,20 +116,21 @@ defmodule GeoQ.Adapters.Shapefile do
   defp validate_projection(columns, %Schema{columns: schema_columns}) do
     known_columns = MapSet.new(schema_columns, & &1.name)
 
-    Enum.reduce_while(columns, :ok, fn
-      "geom", _acc ->
-        {:halt, {:error, {:unsupported_column, "geom"}}}
-
-      column_name, _acc ->
-        if MapSet.member?(known_columns, column_name) do
-          {:cont, :ok}
-        else
-          {:halt, {:error, {:unknown_column, column_name}}}
-        end
+    Enum.reduce_while(columns, :ok, fn column_name, _acc ->
+      if valid_projection_column?(column_name, known_columns) do
+        {:cont, :ok}
+      else
+        {:halt, {:error, {:unknown_column, column_name}}}
+      end
     end)
   end
 
-  defp parse_tsv_rows(output, selected_columns) do
+  defp valid_projection_column?("geom", _known_columns), do: true
+
+  defp valid_projection_column?(column_name, known_columns),
+    do: MapSet.member?(known_columns, column_name)
+
+  defp parse_tsv_rows(output, selected_columns, include_geom) do
     lines = String.split(output, "\n", trim: true)
 
     case lines do
@@ -134,14 +138,39 @@ defmodule GeoQ.Adapters.Shapefile do
         {:ok, []}
 
       [header | data_lines] ->
-        headers = String.split(header, "\t", trim: true)
+        headers = parse_headers(header)
 
-        if headers == selected_columns do
-          {:ok, Enum.map(data_lines, &parse_tsv_row(&1, headers))}
-        else
-          {:error, {:unexpected_output_columns, headers}}
-        end
+        data_lines
+        |> Enum.map(&parse_tsv_row(&1, headers))
+        |> project_rows(selected_columns, include_geom)
     end
+  end
+
+  defp parse_headers(header_line) do
+    header_line
+    |> String.split("\t")
+    |> Enum.reject(&(&1 == ""))
+  end
+
+  defp project_rows(raw_rows, selected_columns, include_geom) do
+    Enum.reduce_while(raw_rows, {:ok, []}, fn raw_row, {:ok, acc} ->
+      case project_row(raw_row, selected_columns, include_geom) do
+        {:ok, projected_row} -> {:cont, {:ok, acc ++ [projected_row]}}
+        {:error, _reason} = error -> {:halt, error}
+      end
+    end)
+  end
+
+  defp project_row(raw_row, selected_columns, include_geom) do
+    Enum.reduce_while(selected_columns, {:ok, %{}}, fn column, {:ok, acc} ->
+      source_column = if column == "geom" and include_geom, do: "WKT", else: column
+
+      if Map.has_key?(raw_row, source_column) do
+        {:cont, {:ok, Map.put(acc, column, Map.get(raw_row, source_column))}}
+      else
+        {:halt, {:error, {:unexpected_output_columns, Map.keys(raw_row)}}}
+      end
+    end)
   end
 
   defp parse_tsv_row(line, headers) do
@@ -170,6 +199,25 @@ defmodule GeoQ.Adapters.Shapefile do
       _ -> rows
     end
   end
+
+  defp build_sql(layer_name, attribute_columns, filters) do
+    projection =
+      case attribute_columns do
+        [] -> "FID"
+        _ -> Enum.join(attribute_columns, ", ")
+      end
+
+    limit_clause =
+      case Keyword.get(filters, :limit) do
+        limit when is_integer(limit) and limit > 0 -> " LIMIT #{limit}"
+        _ -> ""
+      end
+
+    "SELECT #{projection} FROM #{layer_name}#{limit_clause}"
+  end
+
+  defp geometry_lco_args(true), do: ["-lco", "GEOMETRY=AS_WKT"]
+  defp geometry_lco_args(false), do: []
 
   defp parse_layer_name(output) do
     case Regex.run(~r/^Layer name:\s*(.+)$/m, output) do

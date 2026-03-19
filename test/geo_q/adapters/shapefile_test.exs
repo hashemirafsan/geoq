@@ -53,8 +53,22 @@ defmodule GeoQ.Adapters.ShapefileTest do
              Shapefile.read_columns(@shapefile, ["MISSING"], [])
   end
 
-  test "read_columns rejects geom column for now" do
-    assert {:error, {:unsupported_column, "geom"}} =
-             Shapefile.read_columns(@shapefile, ["geom"], [])
+  test "read_columns supports geom as WKT" do
+    assert {:ok, rows} = Shapefile.read_columns(@shapefile, ["geom"], limit: 1)
+    assert length(rows) == 1
+    assert Enum.at(rows, 0)["geom"] =~ "POLYGON"
+  end
+
+  test "read_columns supports mixed attribute and geom projection" do
+    assert {:ok, rows} = Shapefile.read_columns(@shapefile, ["COUNTRY", "geom"], limit: 1)
+
+    row = Enum.at(rows, 0)
+    assert row["COUNTRY"] == "Greece"
+    assert row["geom"] =~ "POLYGON"
+  end
+
+  test "read_columns applies zero limit" do
+    assert {:ok, rows} = Shapefile.read_columns(@shapefile, ["COUNTRY"], limit: 0)
+    assert rows == []
   end
 end

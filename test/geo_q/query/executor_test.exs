@@ -54,6 +54,14 @@ defmodule GeoQ.Query.ExecutorTest do
     assert result.rows == [["Greece"]]
   end
 
+  test "applies adapter-backed shapefile geom projection", %{registry: registry} do
+    assert {:ok, result} = Executor.execute("SELECT geom FROM regions LIMIT 1", registry)
+
+    assert result.columns == ["geom"]
+    assert length(result.rows) == 1
+    assert Enum.at(result.rows, 0) |> Enum.at(0) =~ "POLYGON"
+  end
+
   test "returns error for unregistered source", %{registry: registry} do
     assert {:error, {:source_not_registered, "missing"}} =
              Executor.execute("SELECT * FROM missing", registry)
