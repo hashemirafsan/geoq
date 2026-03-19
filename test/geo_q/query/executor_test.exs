@@ -7,22 +7,32 @@ defmodule GeoQ.Query.ExecutorTest do
   setup do
     storage_path = temp_storage_path()
     registry = start_supervised!({Registry, name: :executor_registry, storage_path: storage_path})
-    :ok = Registry.register("climate", %{file_path: "data/example.nc"}, registry)
+
+    :ok = Registry.register("mock_source", %{file_path: "data/example.mock"}, registry)
+
+    :ok =
+      Registry.register(
+        "climate",
+        %{file_path: "data/HWD_EU_health_rcp85_mean_v1.0.nc"},
+        registry
+      )
+
     %{registry: registry}
   end
 
-  test "executes select all query", %{registry: registry} do
-    assert {:ok, result} = Executor.execute("SELECT * FROM climate LIMIT 1", registry)
+  test "executes select all query against non-netcdf source", %{registry: registry} do
+    assert {:ok, result} = Executor.execute("SELECT * FROM mock_source LIMIT 1", registry)
 
     assert result.columns == ["alias", "file_path"]
-    assert result.rows == [["climate", "data/example.nc"]]
+    assert result.rows == [["mock_source", "data/example.mock"]]
   end
 
-  test "applies projection and limit 0", %{registry: registry} do
-    assert {:ok, result} = Executor.execute("SELECT file_path FROM climate LIMIT 0", registry)
+  test "applies adapter-backed netcdf projection", %{registry: registry} do
+    assert {:ok, result} = Executor.execute("SELECT time FROM climate LIMIT 3", registry)
 
-    assert result.columns == ["file_path"]
-    assert result.rows == []
+    assert result.columns == ["time"]
+    assert length(result.rows) == 3
+    assert Enum.all?(result.rows, fn [value] -> is_integer(value) end)
   end
 
   test "returns error for unknown projected column", %{registry: registry} do

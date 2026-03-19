@@ -16,7 +16,7 @@ Build GeoQ v1 as a CLI geospatial file-native query engine in Elixir, fully runn
 ## Milestone Order
 - [x] M1: Scope + Docker baseline + Quickstart docs
 - [ ] M2: Skeleton app + test/coverage gates
-- [ ] M3: First vertical slice (`register`, `list`, `inspect`, simple `query`)
+- [x] M3: First vertical slice (`register`, `list`, `inspect`, simple `query`)
 - [ ] M4: Full query engine + adapters
 - [ ] M5: Spatial joins + output formats + REPL
 - [ ] M6: Hardening (CI, benchmarks, docs polish, release checklist)

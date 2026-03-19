@@ -93,11 +93,20 @@ defmodule GeoQ.CLITest do
                "query",
                "--format",
                "csv",
-               "SELECT file_path FROM #{alias_name} LIMIT 1"
+               "SELECT time FROM #{alias_name} LIMIT 1"
              ])
 
-    assert output =~ "file_path"
-    assert output =~ @netcdf_file
+    assert output =~ "time"
+
+    assert :ok = Registry.unregister(alias_name)
+  end
+
+  test "query command supports adapter-backed netcdf projection" do
+    alias_name = "query_time_#{System.unique_integer([:positive])}"
+    assert {:ok, _} = CLI.dispatch(["register", @netcdf_file, "--alias", alias_name])
+
+    assert {:ok, output} = CLI.dispatch(["query", "SELECT time FROM #{alias_name} LIMIT 2"])
+    assert output =~ "time"
 
     assert :ok = Registry.unregister(alias_name)
   end

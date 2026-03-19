@@ -28,4 +28,32 @@ defmodule GeoQ.Adapters.NetcdfTest do
     assert {:error, {:command_failed, message}} = Netcdf.schema("architecture.md")
     assert message =~ "Unknown file format"
   end
+
+  test "read_columns reads 1D variable values with limit" do
+    assert {:ok, rows} = Netcdf.read_columns(@netcdf_file, ["time"], limit: 3)
+
+    assert length(rows) == 3
+    assert Enum.all?(rows, fn row -> is_integer(row["time"]) end)
+  end
+
+  test "read_columns broadcasts scalar variables" do
+    assert {:ok, rows} = Netcdf.read_columns(@netcdf_file, ["height", "time"], limit: 2)
+
+    assert length(rows) == 2
+    [first, second] = rows
+
+    assert is_number(first["height"])
+    assert first["height"] == second["height"]
+    assert first["time"] != second["time"]
+  end
+
+  test "read_columns rejects unknown columns" do
+    assert {:error, {:unknown_column, "missing"}} =
+             Netcdf.read_columns(@netcdf_file, ["missing"], [])
+  end
+
+  test "read_columns rejects multi-dimensional variables for now" do
+    assert {:error, {:unsupported_dimensions, "HWD_EU_health", ["time", "lat", "lon"]}} =
+             Netcdf.read_columns(@netcdf_file, ["HWD_EU_health"], [])
+  end
 end

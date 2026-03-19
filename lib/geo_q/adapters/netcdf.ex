@@ -28,7 +28,17 @@ defmodule GeoQ.Adapters.Netcdf do
   end
 
   @impl true
-  def read_columns(_file_path, _columns, _filters), do: {:error, :not_implemented}
+  def read_columns(file_path, columns, filters)
+      when is_binary(file_path) and is_list(columns) and is_list(filters) do
+    expanded_path = Path.expand(file_path)
+
+    with :ok <- validate_file(expanded_path),
+         {:ok, %Schema{} = schema} <- schema(expanded_path),
+         {:ok, selected_columns} <- resolve_selected_columns(schema, columns),
+         {:ok, values_by_column} <- load_column_values(expanded_path, selected_columns) do
+      build_rows(selected_columns, values_by_column, filters)
+    end
+  end
 
   @impl true
   def spatial_index(_file_path), do: {:error, :not_implemented}
@@ -52,6 +62,156 @@ defmodule GeoQ.Adapters.Netcdf do
   rescue
     error in ErlangError ->
       {:error, {:command_failed, Exception.message(error)}}
+  end
+
+  defp ncdump_variable(file_path, variable) do
+    case System.cmd("ncdump", ["-v", variable, file_path], stderr_to_stdout: true) do
+      {output, 0} -> {:ok, output}
+      {output, _exit_code} -> {:error, {:command_failed, String.trim(output)}}
+    end
+  rescue
+    error in ErlangError ->
+      {:error, {:command_failed, Exception.message(error)}}
+  end
+
+  defp resolve_selected_columns(%Schema{columns: schema_columns}, columns) do
+    columns_by_name = Map.new(schema_columns, fn column -> {column.name, column} end)
+
+    Enum.reduce_while(columns, {:ok, []}, fn column_name, {:ok, acc} ->
+      case Map.get(columns_by_name, column_name) do
+        nil ->
+          {:halt, {:error, {:unknown_column, column_name}}}
+
+        %Column{dims: dims} = column when length(dims) <= 1 ->
+          {:cont, {:ok, acc ++ [column]}}
+
+        %Column{dims: dims} ->
+          {:halt, {:error, {:unsupported_dimensions, column_name, dims}}}
+      end
+    end)
+  end
+
+  defp load_column_values(file_path, selected_columns) do
+    Enum.reduce_while(selected_columns, {:ok, %{}}, fn %Column{name: name}, {:ok, acc} ->
+      with {:ok, output} <- ncdump_variable(file_path, name),
+           {:ok, values} <- extract_variable_values(output, name) do
+        {:cont, {:ok, Map.put(acc, name, values)}}
+      else
+        {:error, _reason} = error -> {:halt, error}
+      end
+    end)
+  end
+
+  defp extract_variable_values(output, variable_name) do
+    case String.split(output, "data:", parts: 2) do
+      [_header, data_section] ->
+        variable_regex = ~r/#{Regex.escape(variable_name)}\s*=\s*(.*?);/ms
+
+        case Regex.run(variable_regex, data_section) do
+          [_, values_blob] ->
+            {:ok,
+             values_blob
+             |> String.replace("\n", " ")
+             |> String.split(",", trim: true)
+             |> Enum.map(&String.trim/1)
+             |> Enum.map(&parse_cdl_value/1)}
+
+          _ ->
+            {:error, {:invalid_netcdf_data, variable_name}}
+        end
+
+      _ ->
+        {:error, {:invalid_netcdf_output, variable_name}}
+    end
+  end
+
+  defp parse_cdl_value(token) do
+    cleaned = String.trim(token)
+
+    cond do
+      cleaned in ["NaN", "NaNf", "nan", "nanf", "_"] ->
+        nil
+
+      Regex.match?(~r/^-?\d+(?:[uUlL]+)?$/, cleaned) ->
+        cleaned
+        |> String.replace(~r/[uUlL]+$/, "")
+        |> String.to_integer()
+
+      true ->
+        parse_float_or_string(cleaned)
+    end
+  end
+
+  defp parse_float_or_string(cleaned) do
+    candidate = cleaned |> String.trim_trailing("f") |> String.trim_trailing("F")
+
+    case Float.parse(candidate) do
+      {value, ""} -> value
+      _ -> String.trim(cleaned, "\"")
+    end
+  end
+
+  defp build_rows(selected_columns, values_by_column, filters) do
+    lengths =
+      Enum.map(selected_columns, fn %Column{name: name} ->
+        values_by_column |> Map.fetch!(name) |> length()
+      end)
+
+    row_count = Enum.max([0 | lengths])
+
+    case validate_lengths(selected_columns, values_by_column, row_count) do
+      :ok ->
+        rows = build_row_maps(selected_columns, values_by_column, row_count)
+
+        {:ok, apply_limit(rows, filters)}
+
+      {:error, _reason} = error ->
+        error
+    end
+  end
+
+  defp validate_lengths(selected_columns, values_by_column, row_count) do
+    Enum.reduce_while(selected_columns, :ok, fn %Column{name: name}, :ok ->
+      count = values_by_column |> Map.fetch!(name) |> length()
+
+      cond do
+        count == row_count -> {:cont, :ok}
+        count == 1 -> {:cont, :ok}
+        row_count == 0 -> {:cont, :ok}
+        true -> {:halt, {:error, {:incompatible_column_dimensions, name}}}
+      end
+    end)
+  end
+
+  defp build_row_maps(_selected_columns, _values_by_column, 0), do: []
+
+  defp build_row_maps(selected_columns, values_by_column, row_count) do
+    for row_index <- 0..(row_count - 1) do
+      build_row(selected_columns, values_by_column, row_index)
+    end
+  end
+
+  defp build_row(selected_columns, values_by_column, row_index) do
+    Enum.reduce(selected_columns, %{}, fn %Column{name: name}, acc ->
+      values = Map.fetch!(values_by_column, name)
+      value = value_at(values, row_index)
+      Map.put(acc, name, value)
+    end)
+  end
+
+  defp value_at([], _row_index), do: nil
+  defp value_at([single], _row_index), do: single
+  defp value_at(values, row_index), do: Enum.at(values, row_index)
+
+  defp apply_limit(rows, filters) do
+    limit = Keyword.get(filters, :limit)
+
+    case limit do
+      nil -> rows
+      number when is_integer(number) and number <= 0 -> []
+      number when is_integer(number) -> Enum.take(rows, number)
+      _ -> rows
+    end
   end
 
   defp parse_columns(ncdump_output) do
