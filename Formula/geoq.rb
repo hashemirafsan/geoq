@@ -11,6 +11,8 @@ class Geoq < Formula
   depends_on "netcdf"
 
   def install
+    ENV["MIX_ENV"] = "prod"
+
     system "mix", "local.hex", "--force"
     system "mix", "local.rebar", "--force"
     system "mix", "deps.get", "--only", "prod"
