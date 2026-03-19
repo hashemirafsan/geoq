@@ -1,15 +1,10 @@
-name: Release
+name: Release Verify (Manual)
 
 on:
-  push:
-    tags:
-      - "v*"
-
-permissions:
-  contents: write
+  workflow_dispatch:
 
 jobs:
-  verify:
+  docker-verify:
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
@@ -20,61 +15,16 @@ jobs:
       - name: Run Docker CI checks
         run: make ci
 
-  publish-release:
-    runs-on: ubuntu-latest
-    needs: verify
-
-    steps:
-      - name: Publish GitHub release
-        uses: softprops/action-gh-release@v2
-        with:
-          generate_release_notes: true
-
-  update-formula:
-    runs-on: ubuntu-latest
-    needs: publish-release
-
-    steps:
-      - name: Checkout main branch
-        uses: actions/checkout@v4
-        with:
-          ref: main
-
-      - name: Update Homebrew formula for tagged release
-        env:
-          VERSION: ${{ github.ref_name }}
-        run: |
-          curl -fsSL -o source.tar.gz "https://github.com/hashemirafsan/geoq/archive/refs/tags/${VERSION}.tar.gz"
-          SHA256=$(shasum -a 256 source.tar.gz | cut -d ' ' -f1)
-          bash scripts/release/update_formula.sh "${VERSION}" "${SHA256}"
-
-      - name: Commit and push formula update
-        env:
-          VERSION: ${{ github.ref_name }}
-        run: |
-          if git diff --quiet -- Formula/geoq.rb; then
-            echo "Formula already up to date"
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add Formula/geoq.rb
-          git commit -m "chore(release): update Homebrew formula for ${VERSION}"
-          git push origin HEAD:main
-
-  macos-release-install-smoke:
+  macos-install-smoke:
     runs-on: macos-latest
-    needs: update-formula
     timeout-minutes: 45
 
     steps:
-      - name: Tap and install GeoQ from stable formula
-        run: |
-          brew tap hashemirafsan/geoq https://github.com/hashemirafsan/geoq
-          brew install geoq
-
-      - name: Checkout repository for acceptance assets
+      - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Install GeoQ from formula (HEAD)
+        run: brew install --build-from-source --HEAD ./Formula/geoq.rb
 
       - name: Run installed-binary acceptance smoke
         run: GEOQ_BIN=geoq bash scripts/acceptance/macos_user_journey.sh

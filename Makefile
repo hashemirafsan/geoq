@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: docker-build shell deps compile build-escript test cover format format-check lint ci prepare-test-fixtures acceptance-smoke clean-cache data-check
+.PHONY: docker-build shell deps compile build-escript test cover format format-check lint ci prepare-test-fixtures acceptance-smoke release-local clean-cache data-check
 
 docker-build:
 	docker compose build
@@ -37,6 +37,9 @@ prepare-test-fixtures:
 
 acceptance-smoke:
 	docker compose run --rm dev bash -lc "bash scripts/prepare_test_fixtures.sh && bash scripts/ci/deps_get_retry.sh && mix escript.build && GEOQ_BIN=./geoq bash scripts/acceptance/macos_user_journey.sh"
+
+release-local:
+	bash scripts/release/local_release.sh $(VERSION)
 
 ci:
 	docker compose build && $(MAKE) format-check && $(MAKE) lint && $(MAKE) test

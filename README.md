@@ -41,7 +41,8 @@ make acceptance-smoke # real user journey smoke
 
 - GitHub Actions workflow: `.github/workflows/ci.yml`
 - Uses the same Docker + Make workflow as local development.
-- Release workflow: `.github/workflows/release.yml` (tag `v*`).
+- Manual release verification workflow: `.github/workflows/release.yml`.
+- Initial production releases are performed from local using `make release-local VERSION=vX.Y.Z`.
 
 ## Project Docs
 
