@@ -8,6 +8,7 @@ SHAPE_DIR="${DATA_DIR}/gadm41_GRC_shp"
 NETCDF_FILE="${DATA_DIR}/HWD_EU_health_rcp85_mean_v1.0.nc"
 SHAPE_FILE="${SHAPE_DIR}/gadm41_GRC_0.shp"
 CSV_FILE="${DATA_DIR}/mpi_rca4smhi_1980_2004.csv"
+GEOTIFF_FILE="${DATA_DIR}/fixture_small.tif"
 
 mkdir -p "${DATA_DIR}" "${SHAPE_DIR}"
 
@@ -79,6 +80,44 @@ if [[ ! -f "${CSV_FILE}" ]]; then
 year,value
 1980,1
 EOF
+fi
+
+if [[ ! -f "${GEOTIFF_FILE}" ]]; then
+  cat >"${DATA_DIR}/fixture_raster.geojson" <<'EOF'
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {"value": 5},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [23.0, 38.0],
+            [24.0, 38.0],
+            [24.0, 39.0],
+            [23.0, 39.0],
+            [23.0, 38.0]
+          ]
+        ]
+      }
+    }
+  ]
+}
+EOF
+
+  gdal_rasterize \
+    -burn 5 \
+    -a_nodata -99999 \
+    -ot Float32 \
+    -tr 0.5 0.5 \
+    -te 23 38 24 39 \
+    -of GTiff \
+    "${DATA_DIR}/fixture_raster.geojson" \
+    "${GEOTIFF_FILE}"
+
+  rm -f "${DATA_DIR}/fixture_raster.geojson"
 fi
 
 echo "Test fixtures are available in ${DATA_DIR}"

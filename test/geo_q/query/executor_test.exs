@@ -18,6 +18,13 @@ defmodule GeoQ.Query.ExecutorTest do
 
     :ok =
       Registry.register(
+        "raster",
+        %{file_path: "data/fixture_small.tif"},
+        registry
+      )
+
+    :ok =
+      Registry.register(
         "regions",
         %{file_path: "data/gadm41_GRC_shp/gadm41_GRC_0.shp"},
         registry
@@ -66,6 +73,14 @@ defmodule GeoQ.Query.ExecutorTest do
     assert result.columns == ["geom"]
     assert length(result.rows) == 1
     assert Enum.at(result.rows, 0) |> Enum.at(0) =~ "POLYGON"
+  end
+
+  test "applies adapter-backed geotiff projection", %{registry: registry} do
+    assert {:ok, result} = Executor.execute("SELECT band_1 FROM raster LIMIT 2", registry)
+
+    assert result.columns == ["band_1"]
+    assert length(result.rows) == 2
+    assert Enum.all?(result.rows, fn [value] -> is_number(value) end)
   end
 
   test "returns error for unregistered source", %{registry: registry} do

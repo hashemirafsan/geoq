@@ -6,6 +6,7 @@ defmodule GeoQ.CLITest do
 
   @netcdf_file "data/HWD_EU_health_rcp85_mean_v1.0.nc"
   @shapefile "data/gadm41_GRC_shp/gadm41_GRC_0.shp"
+  @geotiff_file "data/fixture_small.tif"
   @csv_file "data/mpi_rca4smhi_1980_2004.csv"
 
   test "unknown command returns error" do
@@ -168,6 +169,16 @@ defmodule GeoQ.CLITest do
     assert output =~ "geom"
     assert output =~ "POLYGON"
     assert output =~ "..."
+
+    assert :ok = Registry.unregister(alias_name)
+  end
+
+  test "query command supports adapter-backed geotiff projection" do
+    alias_name = "query_raster_#{System.unique_integer([:positive])}"
+    assert {:ok, _} = CLI.dispatch(["register", @geotiff_file, "--alias", alias_name])
+
+    assert {:ok, output} = CLI.dispatch(["query", "SELECT band_1 FROM #{alias_name} LIMIT 2"])
+    assert output =~ "band_1"
 
     assert :ok = Registry.unregister(alias_name)
   end

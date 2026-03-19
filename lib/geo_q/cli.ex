@@ -217,6 +217,9 @@ defmodule GeoQ.CLI do
   defp format_reason({:unsupported_column, column}),
     do: "Unsupported column in this query path: #{column}"
 
+  defp format_reason({:unsupported_band, column}),
+    do: "Unsupported raster band in this query path: #{column}"
+
   defp format_reason({:unexpected_output_columns, headers}),
     do: "Unexpected adapter output columns: #{inspect(headers)}"
 

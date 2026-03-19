@@ -84,7 +84,7 @@ Build GeoQ v1 as a CLI geospatial file-native query engine in Elixir, fully runn
 - [x] Implement Shapefile adapter `schema` + `bbox`
 - [x] Implement Shapefile adapter `read_columns` (attributes + `geom` WKT)
 - [x] Implement Shapefile `spatial_index` hooks
-- [ ] Implement GeoTIFF adapter via GDAL Port calls
+- [x] Implement GeoTIFF adapter via GDAL Port calls
 - [ ] Add resilience tests for missing/corrupt external dependencies
 
 ## Epic I - Spatial Features

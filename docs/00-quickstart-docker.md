@@ -48,7 +48,7 @@ make data-check
 Manual checks:
 
 ```bash
-docker compose run --rm dev gdalinfo data/grc_t_60_2015_CN_100m_R2024B_v1.tif
+docker compose run --rm dev bash -lc "bash scripts/prepare_test_fixtures.sh && gdalinfo data/fixture_small.tif"
 docker compose run --rm dev ncdump -h data/HWD_EU_health_rcp85_mean_v1.0.nc
 ```
 
@@ -103,10 +103,13 @@ docker compose run --rm dev bash -lc "mix run -e 'GeoQ.CLI.main([\"query\", \"SE
 docker compose run --rm dev bash -lc "mix run -e 'GeoQ.CLI.main([\"query\", \"--format\", \"csv\", \"SELECT file_path FROM climate LIMIT 1\"])'"
 docker compose run --rm dev bash -lc "mix run -e 'GeoQ.CLI.main([\"query\", \"SELECT time FROM climate LIMIT 3\"])'"
 docker compose run --rm dev bash -lc "mix run -e 'GeoQ.CLI.main([\"query\", \"--format\", \"json\", \"--compact\", \"SELECT time FROM climate LIMIT 1\"])'"
+docker compose run --rm dev bash -lc "mix run -e 'GeoQ.CLI.main([\"register\", \"data/fixture_small.tif\", \"--alias\", \"raster\"])'"
+docker compose run --rm dev bash -lc "mix run -e 'GeoQ.CLI.main([\"query\", \"SELECT band_1 FROM raster LIMIT 2\"])'"
 docker compose run --rm dev bash -lc "mix run -e 'GeoQ.CLI.main([\"register\", \"data/gadm41_GRC_shp/gadm41_GRC_0.shp\", \"--alias\", \"regions\"])'"
 docker compose run --rm dev bash -lc "mix run -e 'GeoQ.CLI.main([\"query\", \"SELECT COUNTRY FROM regions LIMIT 1\"])'"
 docker compose run --rm dev bash -lc "mix run -e 'GeoQ.CLI.main([\"query\", \"--max-cell-length\", \"40\", \"SELECT geom FROM regions LIMIT 1\"])'"
 docker compose run --rm dev bash -lc "mix run -e 'GeoQ.CLI.main([\"query\", \"--no-truncate\", \"SELECT geom FROM regions LIMIT 1\"])'"
+docker compose run --rm dev bash -lc "mix run -e 'GeoQ.CLI.main([\"unregister\", \"raster\"])'"
 docker compose run --rm dev bash -lc "mix run -e 'GeoQ.CLI.main([\"unregister\", \"regions\"])'"
 ```
 

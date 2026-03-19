@@ -6,6 +6,7 @@ defmodule GeoQ.Query.Executor do
   registered source) while file adapters for row-level reads are implemented.
   """
 
+  alias GeoQ.Adapters.GeoTiff
   alias GeoQ.Adapters.Netcdf
   alias GeoQ.Adapters.Shapefile
   alias GeoQ.Query.Parser
@@ -29,6 +30,8 @@ defmodule GeoQ.Query.Executor do
     case String.downcase(Path.extname(source_path || "")) do
       ".nc" -> execute_netcdf_query(plan, source_path)
       ".shp" -> execute_shapefile_query(plan, source_path)
+      ".tif" -> execute_geotiff_query(plan, source_path)
+      ".tiff" -> execute_geotiff_query(plan, source_path)
       _ -> execute_metadata_query(plan)
     end
   end
@@ -82,6 +85,31 @@ defmodule GeoQ.Query.Executor do
   end
 
   defp execute_shapefile_query(_plan, _source_path), do: {:error, :invalid_projection}
+
+  defp execute_geotiff_query(%{projection: :all} = plan, _source_path) do
+    execute_metadata_query(plan)
+  end
+
+  defp execute_geotiff_query(
+         %{projection: projection, limit: limit, source_alias: source_alias},
+         source_path
+       )
+       when is_list(projection) do
+    filters = if is_nil(limit), do: [], else: [limit: limit]
+
+    with {:ok, rows} <- GeoTiff.read_columns(source_path, projection, filters) do
+      result_rows = Enum.map(rows, fn row -> Enum.map(projection, &Map.get(row, &1)) end)
+
+      {:ok,
+       %ResultSet{
+         columns: projection,
+         rows: result_rows,
+         metadata: %{source_alias: source_alias}
+       }}
+    end
+  end
+
+  defp execute_geotiff_query(_plan, _source_path), do: {:error, :invalid_projection}
 
   defp execute_metadata_query(
          %{source_alias: source_alias, source_metadata: source_metadata} = plan
