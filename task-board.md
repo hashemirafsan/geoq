@@ -4,7 +4,7 @@
 Build GeoQ v1 as a CLI geospatial file-native query engine in Elixir, fully runnable and testable in Docker, with beginner-friendly documentation and 100% test coverage.
 
 ## Definition of Done (Global)
-- [ ] Runs fully in Docker (no host dependency required for normal dev/test)
+- [x] Runs fully in Docker (no host dependency required for normal dev/test)
 - [ ] CI uses the same Docker workflow as local
 - [ ] All user-facing features documented with examples
 - [ ] 100% test coverage on project code
@@ -77,8 +77,12 @@ Build GeoQ v1 as a CLI geospatial file-native query engine in Elixir, fully runn
 
 ## Epic H - Adapters
 - [ ] Define shared adapter behavior contract tests
-- [ ] Implement NetCDF adapter (`schema`, `read_columns`, `bbox`)
-- [ ] Implement Shapefile adapter (`schema`, geometry reads, bbox/index hooks)
+- [x] Implement NetCDF adapter `schema`
+- [x] Implement NetCDF adapter `read_columns` (scalar + 1D current scope)
+- [ ] Implement NetCDF adapter `bbox`
+- [x] Implement Shapefile adapter `schema` + `bbox`
+- [x] Implement Shapefile adapter `read_columns` (attributes + `geom` WKT)
+- [ ] Implement Shapefile `spatial_index` hooks
 - [ ] Implement GeoTIFF adapter via GDAL Port calls
 - [ ] Add resilience tests for missing/corrupt external dependencies
 
@@ -90,8 +94,9 @@ Build GeoQ v1 as a CLI geospatial file-native query engine in Elixir, fully runn
 - [ ] Add fixture-based spatial correctness matrix tests
 
 ## Epic J - Output & REPL
-- [ ] Implement formatters: `table`, `csv`, `json`, `geojson`
-- [ ] Ensure pipe-friendly output behavior
+- [x] Implement formatters: `table`, `csv`, `json`
+- [ ] Implement formatter: `geojson`
+- [x] Ensure pipe-friendly output behavior
 - [ ] Implement REPL with `.help`, `.register`, `.inspect`, `.exit`
 - [ ] Improve UX errors (column suggestion, unknown alias guidance)
 - [ ] Add snapshot tests for output consistency
