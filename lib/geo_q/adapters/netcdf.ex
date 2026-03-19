@@ -5,6 +5,7 @@ defmodule GeoQ.Adapters.Netcdf do
 
   @behaviour GeoQ.Adapters.Behaviour
 
+  alias GeoQ.Types.BBox
   alias GeoQ.Types.Column
   alias GeoQ.Types.Schema
 
@@ -44,7 +45,19 @@ defmodule GeoQ.Adapters.Netcdf do
   def spatial_index(_file_path), do: {:error, :not_implemented}
 
   @impl true
-  def bbox(_file_path), do: {:error, :not_implemented}
+  def bbox(file_path) when is_binary(file_path) do
+    expanded_path = Path.expand(file_path)
+
+    with :ok <- validate_file(expanded_path),
+         {:ok, %Schema{} = schema} <- schema(expanded_path),
+         {:ok, lon_column, lat_column} <- resolve_bbox_columns(schema),
+         {:ok, values_by_column} <- load_column_values(expanded_path, [lon_column, lat_column]),
+         {:ok, min_x, max_x} <-
+           numeric_bounds(values_by_column[lon_column.name], lon_column.name),
+         {:ok, min_y, max_y} <- numeric_bounds(values_by_column[lat_column.name], lat_column.name) do
+      {:ok, %BBox{min_x: min_x, min_y: min_y, max_x: max_x, max_y: max_y}}
+    end
+  end
 
   defp validate_file(file_path) do
     if File.regular?(file_path) do
@@ -100,6 +113,37 @@ defmodule GeoQ.Adapters.Netcdf do
         {:error, _reason} = error -> {:halt, error}
       end
     end)
+  end
+
+  defp resolve_bbox_columns(%Schema{columns: columns}) do
+    with {:ok, lon_column} <- find_coordinate_column(columns, ["lon", "longitude", "x"]),
+         {:ok, lat_column} <- find_coordinate_column(columns, ["lat", "latitude", "y"]),
+         :ok <- validate_coordinate_dims(lon_column),
+         :ok <- validate_coordinate_dims(lat_column) do
+      {:ok, lon_column, lat_column}
+    end
+  end
+
+  defp find_coordinate_column(columns, candidates) do
+    case Enum.find(columns, fn %Column{name: name} -> String.downcase(name) in candidates end) do
+      nil -> {:error, {:bbox_unavailable, {:missing_coordinate_columns, candidates}}}
+      column -> {:ok, column}
+    end
+  end
+
+  defp validate_coordinate_dims(%Column{dims: dims}) when length(dims) <= 1, do: :ok
+
+  defp validate_coordinate_dims(%Column{name: name, dims: dims}) do
+    {:error, {:bbox_unavailable, {:unsupported_coordinate_dims, name, dims}}}
+  end
+
+  defp numeric_bounds(values, column_name) when is_list(values) do
+    numeric_values = Enum.filter(values, &is_number/1)
+
+    case numeric_values do
+      [] -> {:error, {:bbox_unavailable, {:non_numeric_coordinate, column_name}}}
+      _ -> {:ok, Enum.min(numeric_values), Enum.max(numeric_values)}
+    end
   end
 
   defp extract_variable_values(output, variable_name) do

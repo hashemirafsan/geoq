@@ -18,7 +18,9 @@ defmodule GeoQ.Adapters.NetcdfContractTest do
 
     AdapterContractCase.assert_read_columns_unknown(Netcdf, @netcdf_file, "missing")
     AdapterContractCase.assert_spatial_index_not_implemented(Netcdf, @netcdf_file)
-    AdapterContractCase.assert_bbox_not_implemented(Netcdf, @netcdf_file)
+    bbox = AdapterContractCase.assert_bbox_ok(Netcdf, @netcdf_file)
+    assert bbox.min_x <= bbox.max_x
+    assert bbox.min_y <= bbox.max_y
     AdapterContractCase.assert_schema_missing_file(Netcdf, "data/missing.nc")
   end
 end

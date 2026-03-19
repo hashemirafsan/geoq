@@ -16,19 +16,25 @@ if [[ ! -f "${NETCDF_FILE}" ]]; then
 netcdf geoq_fixture {
 dimensions:
   time = 3 ;
-  lat = 1 ;
-  lon = 1 ;
+  lat = 2 ;
+  lon = 2 ;
 variables:
   int time(time) ;
     time:units = "days since 2000-01-01" ;
+  float lat(lat) ;
+    lat:units = "degrees_north" ;
+  float lon(lon) ;
+    lon:units = "degrees_east" ;
   int height ;
     height:units = "m" ;
   float HWD_EU_health(time, lat, lon) ;
     HWD_EU_health:units = "day" ;
 data:
   time = 0, 365, 730 ;
+  lat = 37, 39 ;
+  lon = 23, 25 ;
   height = 2 ;
-  HWD_EU_health = 1, 2, 3 ;
+  HWD_EU_health = 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ;
 }
 EOF
 

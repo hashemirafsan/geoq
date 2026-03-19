@@ -29,6 +29,17 @@ defmodule GeoQ.Adapters.NetcdfTest do
     assert message =~ "Unknown file format"
   end
 
+  test "bbox returns extent from coordinate variables" do
+    assert {:ok, bbox} = Netcdf.bbox(@netcdf_file)
+
+    assert is_number(bbox.min_x)
+    assert is_number(bbox.max_x)
+    assert is_number(bbox.min_y)
+    assert is_number(bbox.max_y)
+    assert bbox.min_x <= bbox.max_x
+    assert bbox.min_y <= bbox.max_y
+  end
+
   test "read_columns reads 1D variable values with limit" do
     assert {:ok, rows} = Netcdf.read_columns(@netcdf_file, ["time"], limit: 3)
 

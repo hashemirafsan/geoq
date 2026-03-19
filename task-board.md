@@ -80,7 +80,7 @@ Build GeoQ v1 as a CLI geospatial file-native query engine in Elixir, fully runn
 - [x] Define shared adapter behavior contract tests
 - [x] Implement NetCDF adapter `schema`
 - [x] Implement NetCDF adapter `read_columns` (scalar + 1D current scope)
-- [ ] Implement NetCDF adapter `bbox`
+- [x] Implement NetCDF adapter `bbox`
 - [x] Implement Shapefile adapter `schema` + `bbox`
 - [x] Implement Shapefile adapter `read_columns` (attributes + `geom` WKT)
 - [ ] Implement Shapefile `spatial_index` hooks
