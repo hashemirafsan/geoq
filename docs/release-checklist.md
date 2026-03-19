@@ -76,8 +76,3 @@ GEOQ_BIN=geoq bash scripts/acceptance/macos_user_journey.sh
 
 - follow `docs/rollback.md`
 - open incident note with failing step and logs
-
-## Optional GitHub manual verification workflow
-
-You can run `.github/workflows/release.yml` manually to re-check release readiness,
-but initial releases are executed from local.

@@ -94,4 +94,4 @@ make test
 make ci
 ```
 
-`make ci` is the canonical pre-PR command and matches GitHub Actions behavior.
+`make ci` is the canonical pre-PR verification command.

@@ -7,11 +7,15 @@ Current status: Docker-first development and production-grade macOS install pipe
 ## Install on macOS (Homebrew)
 
 ```bash
-brew tap hashemirafsan/geoq
-brew install geoq
+brew untap hashemirafsan/geoq 2>/dev/null || true
+brew tap hashemirafsan/geoq https://github.com/hashemirafsan/geoq
+brew install hashemirafsan/geoq/geoq
 geoq --version
 geoq doctor
 ```
+
+Note: we use an explicit tap URL because this formula lives in `hashemirafsan/geoq`
+instead of the default `homebrew-geoq` repository naming convention.
 
 ## Quick Start (Docker)
 
@@ -37,12 +41,11 @@ make ci           # full docker-based CI checks
 make acceptance-smoke # real user journey smoke
 ```
 
-## CI
+## Verification
 
-- GitHub Actions workflow: `.github/workflows/ci.yml`
-- Uses the same Docker + Make workflow as local development.
-- Manual release verification workflow: `.github/workflows/release.yml`.
-- Initial production releases are performed from local using `make release-local VERSION=vX.Y.Z`.
+- Run local checks with `make ci`.
+- Run end-user smoke with `make acceptance-smoke`.
+- Initial production releases are performed locally using `make release-local VERSION=vX.Y.Z`.
 
 ## Project Docs
 
