@@ -65,10 +65,13 @@ defmodule GeoQ.Adapters.Shapefile do
          {:ok, output} <- ogrinfo_summary(expanded_path),
          %BBox{} = bbox <- parse_bbox(output),
          {:ok, file_stat} <- File.stat(expanded_path, time: :posix) do
+      layer_name =
+        parse_layer_name(output) || Path.basename(expanded_path, Path.extname(expanded_path))
+
       {:ok,
        %{
          index_type: :bbox_vector,
-         layer_name: parse_layer_name(output),
+         layer_name: layer_name,
          feature_count: parse_feature_count(output),
          bbox: bbox,
          file_mtime: file_stat.mtime
