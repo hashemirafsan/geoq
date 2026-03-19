@@ -1,0 +1,10 @@
+.git
+.github
+.ansio
+_build
+deps
+tmp
+node_modules
+*.swp
+*.swo
+.DS_Store

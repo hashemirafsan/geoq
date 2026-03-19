@@ -1,0 +1,40 @@
+services:
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    working_dir: /workspace
+    command: bash
+    stdin_open: true
+    tty: true
+    environment:
+      MIX_ENV: dev
+    volumes:
+      - .:/workspace
+      - mix-deps:/workspace/deps
+      - mix-build:/workspace/_build
+      - hex-cache:/root/.hex
+      - rebar-cache:/root/.cache/rebar3
+      - geoq-registry:/root/.geoq
+
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    working_dir: /workspace
+    command: bash -lc "mix deps.get && mix test --cover"
+    environment:
+      MIX_ENV: test
+    volumes:
+      - .:/workspace
+      - mix-deps:/workspace/deps
+      - mix-build:/workspace/_build
+      - hex-cache:/root/.hex
+      - rebar-cache:/root/.cache/rebar3
+
+volumes:
+  mix-deps:
+  mix-build:
+  hex-cache:
+  rebar-cache:
+  geoq-registry:

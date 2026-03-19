@@ -1,0 +1,105 @@
+# Quickstart: Docker Development
+
+This guide runs GeoQ development fully inside Docker so your host machine stays clean.
+
+## 1) Prerequisites
+
+- Docker Desktop (or Docker Engine + Compose)
+
+Check:
+
+```bash
+docker --version
+docker compose version
+```
+
+## 2) Build the image
+
+From project root:
+
+```bash
+make docker-build
+```
+
+What this installs in the container:
+
+- Elixir + Erlang runtime
+- `gdal-bin` for GeoTIFF tooling
+- `netcdf-bin` and `libnetcdf-dev` for NetCDF tooling
+
+## 3) Open a dev shell
+
+```bash
+make shell
+```
+
+You will be inside `/workspace` with the project mounted.
+
+## 4) Validate sample data tools
+
+The repository includes a `data/` folder with `.tif`, `.nc`, `.csv`, and `.shp` assets.
+
+Run a quick check:
+
+```bash
+make data-check
+```
+
+Manual checks:
+
+```bash
+docker compose run --rm dev gdalinfo data/grc_t_60_2015_CN_100m_R2024B_v1.tif
+docker compose run --rm dev ncdump -h data/HWD_EU_health_rcp85_mean_v1.0.nc
+```
+
+## 5) Standard workflow commands
+
+- `make deps` - fetch Mix dependencies
+- `make compile` - compile app
+- `make test` - run tests in container
+- `make cover` - run tests with coverage
+- `make format` - apply formatter
+- `make lint` - run Credo lint checks
+- `make clean-cache` - remove Compose volumes/caches
+
+## 6) Run the first GeoQ inspect command
+
+GeoQ currently has `.nc` and `.shp` inspect support.
+
+```bash
+docker compose run --rm dev bash -lc "mix run -e 'GeoQ.CLI.main([\"inspect\", \"data/HWD_EU_health_rcp85_mean_v1.0.nc\"])'"
+```
+
+JSON output:
+
+```bash
+docker compose run --rm dev bash -lc "mix run -e 'GeoQ.CLI.main([\"inspect\", \"--format\", \"json\", \"data/HWD_EU_health_rcp85_mean_v1.0.nc\"])'"
+```
+
+Shapefile inspect:
+
+```bash
+docker compose run --rm dev bash -lc "mix run -e 'GeoQ.CLI.main([\"inspect\", \"data/gadm41_GRC_shp/gadm41_GRC_0.shp\"])'"
+```
+
+Registry persistence check:
+
+```bash
+docker compose run --rm dev bash -lc "mix run -e 'GeoQ.CLI.main([\"register\", \"data/HWD_EU_health_rcp85_mean_v1.0.nc\", \"--alias\", \"climate\"])'"
+docker compose run --rm dev bash -lc "mix run -e 'GeoQ.CLI.main([\"list\"])'"
+```
+
+The registry file is persisted at `~/.geoq/registry.json` inside the container and backed by a named Docker volume.
+
+If you try to register the same alias again, GeoQ returns an `alias_exists` error to prevent accidental overwrite.
+
+## 7) Notes on speed and reproducibility
+
+- Compose uses named volumes for `_build`, `deps`, Hex, and Rebar caches.
+- First build is slower; later runs are faster due to cached layers/volumes.
+
+## 8) Troubleshooting
+
+- If dependency fetch fails due to network hiccups, rerun `make deps`.
+- If cache gets corrupted, run `make clean-cache` then `make docker-build`.
+- If file permissions look odd on macOS, use Docker Desktop default file sharing.
