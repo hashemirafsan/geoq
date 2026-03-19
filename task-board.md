@@ -77,7 +77,7 @@ Build GeoQ v1 as a CLI geospatial file-native query engine in Elixir, fully runn
 - [x] Add tests: AST snapshots, planner rules, executor correctness
 
 ## Epic H - Adapters
-- [ ] Define shared adapter behavior contract tests
+- [x] Define shared adapter behavior contract tests
 - [x] Implement NetCDF adapter `schema`
 - [x] Implement NetCDF adapter `read_columns` (scalar + 1D current scope)
 - [ ] Implement NetCDF adapter `bbox`
