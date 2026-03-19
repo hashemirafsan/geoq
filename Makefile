@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: docker-build shell deps compile test cover format lint clean-cache data-check
+.PHONY: docker-build shell deps compile test cover format format-check lint ci prepare-test-fixtures clean-cache data-check
 
 docker-build:
 	docker compose build
@@ -15,16 +15,25 @@ compile:
 	docker compose run --rm dev bash -lc "mix compile"
 
 test:
-	docker compose run --rm test
+	docker compose run --rm test bash -lc "bash scripts/prepare_test_fixtures.sh && mix deps.get && mix test --cover"
 
 cover:
-	docker compose run --rm test bash -lc "mix deps.get && mix test --cover"
+	docker compose run --rm test bash -lc "bash scripts/prepare_test_fixtures.sh && mix deps.get && mix test --cover"
 
 format:
 	docker compose run --rm dev bash -lc "mix format"
 
+format-check:
+	docker compose run --rm dev bash -lc "mix format --check-formatted"
+
 lint:
 	docker compose run --rm dev bash -lc "mix credo --strict"
+
+prepare-test-fixtures:
+	docker compose run --rm dev bash -lc "bash scripts/prepare_test_fixtures.sh"
+
+ci:
+	docker compose build && $(MAKE) format-check && $(MAKE) lint && $(MAKE) test
 
 clean-cache:
 	docker compose down -v

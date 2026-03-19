@@ -5,7 +5,7 @@ Build GeoQ v1 as a CLI geospatial file-native query engine in Elixir, fully runn
 
 ## Definition of Done (Global)
 - [x] Runs fully in Docker (no host dependency required for normal dev/test)
-- [ ] CI uses the same Docker workflow as local
+- [x] CI uses the same Docker workflow as local
 - [ ] All user-facing features documented with examples
 - [ ] 100% test coverage on project code
 - [ ] Error paths covered and documented
@@ -48,9 +48,10 @@ Build GeoQ v1 as a CLI geospatial file-native query engine in Elixir, fully runn
 ## Epic D - Test & Coverage Infrastructure
 - [ ] Configure ExUnit defaults and deterministic test helpers
 - [x] Configure coverage reports (`mix test --cover`, ExCoveralls optional)
-- [ ] Add coverage gate in CI (ratchet to 100%)
+- [x] Add coverage gate in CI (ratchet to 100%)
 - [ ] Define test categories: unit / contract / integration / regression
 - [ ] Add policy: every `{:error, ...}` path must have a test
+- [x] Add CI fixture generation strategy (`scripts/prepare_test_fixtures.sh`)
 - [ ] Add sample fixture strategy under `priv/sample_data`
 
 ## Epic E - Core Types & Registry
@@ -111,7 +112,7 @@ Build GeoQ v1 as a CLI geospatial file-native query engine in Elixir, fully runn
 - [ ] Add "how to add a new adapter" guide
 
 ## Epic L - CI, Performance, Release
-- [ ] Docker-based CI pipeline (format, lint, tests, coverage)
+- [x] Docker-based CI pipeline (format, lint, tests, coverage)
 - [ ] Enforce 100% coverage threshold
 - [ ] Add benchmark smoke tests for representative workloads
 - [ ] Validate architecture success criteria with executable test cases

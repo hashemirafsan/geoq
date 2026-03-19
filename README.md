@@ -21,9 +21,16 @@ make data-check
 ```bash
 make shell        # interactive dev shell
 make format       # code formatting
+make format-check # check formatting only
 make lint         # credo checks
 make test         # tests with coverage report
+make ci           # full docker-based CI checks
 ```
+
+## CI
+
+- GitHub Actions workflow: `.github/workflows/ci.yml`
+- Uses the same Docker + Make workflow as local development.
 
 ## Project Docs
 

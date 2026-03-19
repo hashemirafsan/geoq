@@ -59,7 +59,10 @@ docker compose run --rm dev ncdump -h data/HWD_EU_health_rcp85_mean_v1.0.nc
 - `make test` - run tests in container
 - `make cover` - run tests with coverage
 - `make format` - apply formatter
+- `make format-check` - verify formatting (CI mode)
 - `make lint` - run Credo lint checks
+- `make prepare-test-fixtures` - create local test fixtures when data files are absent
+- `make ci` - run Docker build + format-check + lint + tests
 - `make clean-cache` - remove Compose volumes/caches
 
 ## 6) Run the first GeoQ inspect command

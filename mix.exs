@@ -8,7 +8,7 @@ defmodule GeoQ.MixProject do
       elixir: "~> 1.17",
       start_permanent: Mix.env() == :prod,
       escript: [main_module: GeoQ.CLI],
-      test_coverage: [summary: [threshold: 0]],
+      test_coverage: [summary: [threshold: 70]],
       deps: deps()
     ]
   end
