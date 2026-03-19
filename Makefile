@@ -9,19 +9,19 @@ shell:
 	docker compose run --rm dev
 
 deps:
-	docker compose run --rm dev bash -lc "mix deps.get"
+	docker compose run --rm dev bash -lc "bash scripts/ci/deps_get_retry.sh"
 
 compile:
-	docker compose run --rm dev bash -lc "mix compile"
+	docker compose run --rm dev bash -lc "bash scripts/ci/deps_get_retry.sh && mix compile"
 
 build-escript:
-	docker compose run --rm dev bash -lc "mix escript.build"
+	docker compose run --rm dev bash -lc "bash scripts/ci/deps_get_retry.sh && mix escript.build"
 
 test:
-	docker compose run --rm test bash -lc "bash scripts/prepare_test_fixtures.sh && mix deps.get && mix test --cover"
+	docker compose run --rm test bash -lc "bash scripts/prepare_test_fixtures.sh && bash scripts/ci/deps_get_retry.sh && mix test --cover"
 
 cover:
-	docker compose run --rm test bash -lc "bash scripts/prepare_test_fixtures.sh && mix deps.get && mix test --cover"
+	docker compose run --rm test bash -lc "bash scripts/prepare_test_fixtures.sh && bash scripts/ci/deps_get_retry.sh && mix test --cover"
 
 format:
 	docker compose run --rm dev bash -lc "mix format"
@@ -30,13 +30,13 @@ format-check:
 	docker compose run --rm dev bash -lc "mix format --check-formatted"
 
 lint:
-	docker compose run --rm dev bash -lc "mix credo --strict"
+	docker compose run --rm dev bash -lc "bash scripts/ci/deps_get_retry.sh && mix credo --strict"
 
 prepare-test-fixtures:
 	docker compose run --rm dev bash -lc "bash scripts/prepare_test_fixtures.sh"
 
 acceptance-smoke:
-	docker compose run --rm dev bash -lc "bash scripts/prepare_test_fixtures.sh && mix escript.build && GEOQ_BIN=./geoq bash scripts/acceptance/macos_user_journey.sh"
+	docker compose run --rm dev bash -lc "bash scripts/prepare_test_fixtures.sh && bash scripts/ci/deps_get_retry.sh && mix escript.build && GEOQ_BIN=./geoq bash scripts/acceptance/macos_user_journey.sh"
 
 ci:
 	docker compose build && $(MAKE) format-check && $(MAKE) lint && $(MAKE) test
