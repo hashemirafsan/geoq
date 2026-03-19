@@ -39,6 +39,13 @@ defmodule GeoQ.AdapterContractCase do
     :ok
   end
 
+  @spec assert_spatial_index_ok(module(), String.t()) :: map()
+  def assert_spatial_index_ok(adapter, file_path) do
+    assert {:ok, index} = adapter.spatial_index(file_path)
+    assert is_map(index)
+    index
+  end
+
   @spec assert_bbox_ok(module(), String.t()) :: BBox.t()
   def assert_bbox_ok(adapter, file_path) do
     assert {:ok, %BBox{} = bbox} = adapter.bbox(file_path)

@@ -22,7 +22,9 @@ defmodule GeoQ.Adapters.ShapefileContractTest do
     assert rows == [%{"COUNTRY" => "Greece", "GID_0" => "GRC"}]
 
     AdapterContractCase.assert_read_columns_unknown(Shapefile, @shapefile, "MISSING")
-    AdapterContractCase.assert_spatial_index_not_implemented(Shapefile, @shapefile)
+    index = AdapterContractCase.assert_spatial_index_ok(Shapefile, @shapefile)
+    assert index.index_type == :bbox_vector
+    assert is_integer(index.feature_count)
 
     bbox = AdapterContractCase.assert_bbox_ok(Shapefile, @shapefile)
     assert bbox.min_x < bbox.max_x

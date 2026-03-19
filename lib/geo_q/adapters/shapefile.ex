@@ -58,7 +58,26 @@ defmodule GeoQ.Adapters.Shapefile do
   end
 
   @impl true
-  def spatial_index(_file_path), do: {:error, :not_implemented}
+  def spatial_index(file_path) when is_binary(file_path) do
+    expanded_path = Path.expand(file_path)
+
+    with :ok <- validate_file(expanded_path),
+         {:ok, output} <- ogrinfo_summary(expanded_path),
+         %BBox{} = bbox <- parse_bbox(output),
+         {:ok, file_stat} <- File.stat(expanded_path, time: :posix) do
+      {:ok,
+       %{
+         index_type: :bbox_vector,
+         layer_name: parse_layer_name(output),
+         feature_count: parse_feature_count(output),
+         bbox: bbox,
+         file_mtime: file_stat.mtime
+       }}
+    else
+      nil -> {:error, {:spatial_index_unavailable, :bbox_not_found}}
+      {:error, _reason} = error -> error
+    end
+  end
 
   @impl true
   def bbox(file_path) when is_binary(file_path) do
@@ -254,6 +273,13 @@ defmodule GeoQ.Adapters.Shapefile do
   defp parse_crs(output) do
     case Regex.run(~r/ID\["EPSG",\s*(\d+)\]/, output) do
       [_, epsg_code] -> "EPSG:#{epsg_code}"
+      _ -> nil
+    end
+  end
+
+  defp parse_feature_count(output) do
+    case Regex.run(~r/^Feature Count:\s*(\d+)$/m, output) do
+      [_, count] -> String.to_integer(count)
       _ -> nil
     end
   end

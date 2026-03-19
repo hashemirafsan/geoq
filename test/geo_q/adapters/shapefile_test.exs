@@ -32,6 +32,17 @@ defmodule GeoQ.Adapters.ShapefileTest do
     assert bbox.min_y < bbox.max_y
   end
 
+  test "spatial_index returns bbox metadata hooks" do
+    assert {:ok, index} = Shapefile.spatial_index(@shapefile)
+
+    assert index.index_type == :bbox_vector
+    assert index.layer_name == "gadm41_GRC_0"
+    assert is_integer(index.feature_count)
+    assert index.feature_count > 0
+    assert index.bbox.min_x < index.bbox.max_x
+    assert is_integer(index.file_mtime)
+  end
+
   test "schema returns file-not-found error" do
     assert {:error, {:file_not_found, file_path}} = Shapefile.schema("data/missing.shp")
     assert file_path == Path.expand("data/missing.shp")
