@@ -102,6 +102,8 @@ docker compose run --rm dev bash -lc "mix run -e 'GeoQ.CLI.main([\"query\", \"SE
 docker compose run --rm dev bash -lc "mix run -e 'GeoQ.CLI.main([\"query\", \"--format\", \"json\", \"--compact\", \"SELECT time FROM climate LIMIT 1\"])'"
 docker compose run --rm dev bash -lc "mix run -e 'GeoQ.CLI.main([\"register\", \"data/gadm41_GRC_shp/gadm41_GRC_0.shp\", \"--alias\", \"regions\"])'"
 docker compose run --rm dev bash -lc "mix run -e 'GeoQ.CLI.main([\"query\", \"SELECT COUNTRY FROM regions LIMIT 1\"])'"
+docker compose run --rm dev bash -lc "mix run -e 'GeoQ.CLI.main([\"query\", \"--max-cell-length\", \"40\", \"SELECT geom FROM regions LIMIT 1\"])'"
+docker compose run --rm dev bash -lc "mix run -e 'GeoQ.CLI.main([\"query\", \"--no-truncate\", \"SELECT geom FROM regions LIMIT 1\"])'"
 docker compose run --rm dev bash -lc "mix run -e 'GeoQ.CLI.main([\"unregister\", \"regions\"])'"
 ```
 
@@ -109,6 +111,7 @@ Notes:
 
 - JSON query output defaults to pretty printing; use `--compact` for single-line JSON.
 - Table output truncates very long values (like WKT geometry) to keep terminal output readable.
+- Use `--no-truncate` to print full values, or `--max-cell-length <n>` to tune truncation length.
 
 ## 7) Notes on speed and reproducibility
 

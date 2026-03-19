@@ -172,6 +172,52 @@ defmodule GeoQ.CLITest do
     assert :ok = Registry.unregister(alias_name)
   end
 
+  test "query command supports max-cell-length option" do
+    alias_name = "query_trunc_#{System.unique_integer([:positive])}"
+    assert {:ok, _} = CLI.dispatch(["register", @netcdf_file, "--alias", alias_name])
+
+    assert {:ok, output} =
+             CLI.dispatch([
+               "query",
+               "--max-cell-length",
+               "20",
+               "SELECT * FROM #{alias_name} LIMIT 1"
+             ])
+
+    assert output =~ "..."
+    assert :ok = Registry.unregister(alias_name)
+  end
+
+  test "query command supports no-truncate option" do
+    alias_name = "query_notrunc_#{System.unique_integer([:positive])}"
+    assert {:ok, _} = CLI.dispatch(["register", @netcdf_file, "--alias", alias_name])
+
+    assert {:ok, output} =
+             CLI.dispatch([
+               "query",
+               "--no-truncate",
+               "SELECT * FROM #{alias_name} LIMIT 1"
+             ])
+
+    assert output =~ @netcdf_file
+    assert :ok = Registry.unregister(alias_name)
+  end
+
+  test "query command rejects invalid max-cell-length" do
+    alias_name = "query_badmax_#{System.unique_integer([:positive])}"
+    assert {:ok, _} = CLI.dispatch(["register", @netcdf_file, "--alias", alias_name])
+
+    assert {:error, {:invalid_max_cell_length, 0}} =
+             CLI.dispatch([
+               "query",
+               "--max-cell-length",
+               "0",
+               "SELECT * FROM #{alias_name} LIMIT 1"
+             ])
+
+    assert :ok = Registry.unregister(alias_name)
+  end
+
   test "query command validates args" do
     assert {:error, :invalid_query_args} = CLI.dispatch(["query"])
   end
