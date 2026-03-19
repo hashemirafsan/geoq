@@ -69,11 +69,13 @@ defmodule GeoQ.CLI do
   end
 
   def dispatch(["query" | rest]) do
-    case OptionParser.parse(rest, strict: [format: :string, file: :string]) do
+    case OptionParser.parse(rest,
+           strict: [format: :string, file: :string, pretty: :boolean, compact: :boolean]
+         ) do
       {opts, args, []} ->
         with {:ok, sql} <- resolve_query_sql(opts, args),
              {:ok, result_set} <- Executor.execute(sql) do
-          render_query_result(result_set, query_format(opts))
+          render_query_result(result_set, query_format(opts), opts)
         end
 
       _ ->
@@ -126,12 +128,25 @@ defmodule GeoQ.CLI do
     |> String.downcase()
   end
 
-  defp render_query_result(result_set, "table"), do: {:ok, Table.format(result_set)}
-  defp render_query_result(result_set, "csv"), do: {:ok, CSV.format(result_set)}
-  defp render_query_result(result_set, "json"), do: JSON.format(result_set)
+  defp render_query_result(result_set, "table", _opts), do: {:ok, Table.format(result_set)}
+  defp render_query_result(result_set, "csv", _opts), do: {:ok, CSV.format(result_set)}
 
-  defp render_query_result(_result_set, format),
+  defp render_query_result(result_set, "json", opts),
+    do: JSON.format(result_set, json_style(opts))
+
+  defp render_query_result(_result_set, format, _opts),
     do: {:error, {:unsupported_output_format, format}}
+
+  defp json_style(opts) do
+    compact? = Keyword.get(opts, :compact, false)
+    pretty? = Keyword.get(opts, :pretty, false)
+
+    cond do
+      compact? -> :compact
+      pretty? -> :pretty
+      true -> :pretty
+    end
+  end
 
   defp format_entry({source_alias, metadata}) do
     file_path = Map.get(metadata, :file_path) || Map.get(metadata, "file_path") || ""
@@ -172,6 +187,9 @@ defmodule GeoQ.CLI do
 
   defp format_reason({:unexpected_output_columns, headers}),
     do: "Unexpected adapter output columns: #{inspect(headers)}"
+
+  defp format_reason({:invalid_json_style, style}),
+    do: "Invalid JSON style: #{inspect(style)}"
 
   defp format_reason({:query_file_read_failed, file_path, reason}),
     do: "Could not read query file #{file_path}: #{inspect(reason)}"

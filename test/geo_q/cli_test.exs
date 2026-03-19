@@ -111,6 +111,44 @@ defmodule GeoQ.CLITest do
     assert :ok = Registry.unregister(alias_name)
   end
 
+  test "query command supports json compact output" do
+    alias_name = "query_json_compact_#{System.unique_integer([:positive])}"
+    assert {:ok, _} = CLI.dispatch(["register", @netcdf_file, "--alias", alias_name])
+
+    assert {:ok, output} =
+             CLI.dispatch([
+               "query",
+               "--format",
+               "json",
+               "--compact",
+               "SELECT time FROM #{alias_name} LIMIT 1"
+             ])
+
+    refute output =~ "\n"
+    decoded = Jason.decode!(output)
+    assert decoded["columns"] == ["time"]
+
+    assert :ok = Registry.unregister(alias_name)
+  end
+
+  test "query command supports json pretty output" do
+    alias_name = "query_json_pretty_#{System.unique_integer([:positive])}"
+    assert {:ok, _} = CLI.dispatch(["register", @netcdf_file, "--alias", alias_name])
+
+    assert {:ok, output} =
+             CLI.dispatch([
+               "query",
+               "--format",
+               "json",
+               "--pretty",
+               "SELECT time FROM #{alias_name} LIMIT 1"
+             ])
+
+    assert output =~ "\n"
+
+    assert :ok = Registry.unregister(alias_name)
+  end
+
   test "query command supports adapter-backed shapefile projection" do
     alias_name = "query_regions_#{System.unique_integer([:positive])}"
     assert {:ok, _} = CLI.dispatch(["register", @shapefile, "--alias", alias_name])
@@ -129,6 +167,7 @@ defmodule GeoQ.CLITest do
     assert {:ok, output} = CLI.dispatch(["query", "SELECT geom FROM #{alias_name} LIMIT 1"])
     assert output =~ "geom"
     assert output =~ "POLYGON"
+    assert output =~ "..."
 
     assert :ok = Registry.unregister(alias_name)
   end
