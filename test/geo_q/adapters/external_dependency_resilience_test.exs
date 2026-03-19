@@ -9,46 +9,41 @@ defmodule GeoQ.Adapters.ExternalDependencyResilienceTest do
   @shapefile "data/gadm41_GRC_shp/gadm41_GRC_0.shp"
   @geotiff_file "data/fixture_small.tif"
 
+  setup do
+    original_path = System.get_env("PATH")
+    on_exit(fn -> restore_path(original_path) end)
+    :ok
+  end
+
   test "netcdf schema returns command_failed when ncdump is unavailable" do
-    with_missing_commands(fn ->
-      assert {:error, {:command_failed, message}} = Netcdf.schema(@netcdf_file)
-      assert missing_command_message?(message)
-    end)
+    set_missing_commands()
+    assert {:error, {:command_failed, message}} = Netcdf.schema(@netcdf_file)
+    assert missing_command_message?(message)
   end
 
   test "shapefile schema returns command_failed when ogrinfo is unavailable" do
-    with_missing_commands(fn ->
-      assert {:error, {:command_failed, message}} = Shapefile.schema(@shapefile)
-      assert missing_command_message?(message)
-    end)
+    set_missing_commands()
+    assert {:error, {:command_failed, message}} = Shapefile.schema(@shapefile)
+    assert missing_command_message?(message)
   end
 
   test "geotiff schema returns command_failed when gdalinfo is unavailable" do
-    with_missing_commands(fn ->
-      assert {:error, {:command_failed, message}} = GeoTiff.schema(@geotiff_file)
-      assert missing_command_message?(message)
-    end)
+    set_missing_commands()
+    assert {:error, {:command_failed, message}} = GeoTiff.schema(@geotiff_file)
+    assert missing_command_message?(message)
   end
 
   test "geotiff read_columns returns command_failed when gdal_translate is unavailable" do
-    with_missing_commands(fn ->
-      assert {:error, {:command_failed, message}} =
-               GeoTiff.read_columns(@geotiff_file, ["x", "y", "band_1"], limit: 1)
+    set_missing_commands()
 
-      assert missing_command_message?(message)
-    end)
+    assert {:error, {:command_failed, message}} =
+             GeoTiff.read_columns(@geotiff_file, ["x", "y", "band_1"], limit: 1)
+
+    assert missing_command_message?(message)
   end
 
-  defp with_missing_commands(fun) do
-    original_path = System.get_env("PATH")
-
+  defp set_missing_commands do
     System.put_env("PATH", "/geoq/no-such-bin")
-
-    try do
-      fun.()
-    after
-      restore_path(original_path)
-    end
   end
 
   defp restore_path(nil), do: System.delete_env("PATH")

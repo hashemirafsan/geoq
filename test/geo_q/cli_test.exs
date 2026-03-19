@@ -61,6 +61,22 @@ defmodule GeoQ.CLITest do
     assert Enum.any?(decoded["columns"], fn column -> column["name"] == "COUNTRY" end)
   end
 
+  test "inspect command supports geotiff table output" do
+    assert {:ok, output} = CLI.dispatch(["inspect", @geotiff_file])
+    assert output =~ "Format: geotiff"
+    assert output =~ "band_1"
+  end
+
+  test "inspect command supports geotiff json output" do
+    assert {:ok, output} = CLI.dispatch(["inspect", "--format", "json", @geotiff_file])
+
+    decoded = Jason.decode!(output)
+    assert decoded["format"] == "geotiff"
+    assert decoded["file_path"] == Path.expand(@geotiff_file)
+    assert decoded["bbox"]["min_x"] < decoded["bbox"]["max_x"]
+    assert Enum.any?(decoded["columns"], fn column -> column["name"] == "band_1" end)
+  end
+
   test "inspect command rejects unsupported output format" do
     assert {:error, {:unsupported_output_format, "yaml"}} =
              CLI.dispatch(["inspect", "--format", "yaml", @netcdf_file])

@@ -3,6 +3,7 @@ defmodule GeoQ.Commands.Inspect do
   Handles file inspection command dispatch and output formatting.
   """
 
+  alias GeoQ.Adapters.GeoTiff
   alias GeoQ.Adapters.Netcdf
   alias GeoQ.Adapters.Shapefile
   alias GeoQ.Types.BBox
@@ -23,6 +24,8 @@ defmodule GeoQ.Commands.Inspect do
     case String.downcase(Path.extname(file_path)) do
       ".nc" -> Netcdf.schema(file_path)
       ".shp" -> Shapefile.schema(file_path)
+      ".tif" -> GeoTiff.schema(file_path)
+      ".tiff" -> GeoTiff.schema(file_path)
       extension -> {:error, {:unsupported_source_format, extension}}
     end
   end
